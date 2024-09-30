@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 
-import type { User } from "@/api/user/userModel";
+import type { User, UserProfile } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { logger } from "@/server";
@@ -13,13 +13,13 @@ export class UserService {
   }
 
   // Retrieves all users from the database
-  async findAll(): Promise<ServiceResponse<User[] | null>> {
+  async findAll(): Promise<ServiceResponse<UserProfile[] | null>> {
     try {
-      const users = await this.userRepository.findAllAsync();
+      const users = await this.userRepository.getAllUsers();
       if (!users || users.length === 0) {
         return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<User[]>("Users found", users);
+      return ServiceResponse.success<UserProfile[]>("Users found", users);
     } catch (ex) {
       const errorMessage = `Error finding all users: $${(ex as Error).message}`;
       logger.error(errorMessage);
@@ -32,15 +32,15 @@ export class UserService {
   }
 
   // Retrieves a single user by their ID
-  async findById(id: number): Promise<ServiceResponse<User | null>> {
+  async findById(userId: string): Promise<ServiceResponse<UserProfile | null>> {
     try {
-      const user = await this.userRepository.findByIdAsync(id);
+      const user = await this.userRepository.getUser(userId);
       if (!user) {
         return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
       }
-      return ServiceResponse.success<User>("User found", user);
+      return ServiceResponse.success<UserProfile>("User found", user);
     } catch (ex) {
-      const errorMessage = `Error finding user with id ${id}:, ${(ex as Error).message}`;
+      const errorMessage = `Error finding user with id ${userId}:, ${(ex as Error).message}`;
       logger.error(errorMessage);
       return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }

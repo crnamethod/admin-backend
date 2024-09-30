@@ -10,8 +10,10 @@ class UserController {
   };
 
   public getUser: RequestHandler = async (req: Request, res: Response) => {
+    console.log(req.params);
     const id = Number.parseInt(req.params.id as string, 10);
-    const serviceResponse = await userService.findById(id);
+    const userId = req.params.id as string;
+    const serviceResponse = await userService.findById(userId);
     return handleServiceResponse(serviceResponse, res);
   };
 }

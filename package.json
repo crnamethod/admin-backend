@@ -20,6 +20,9 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
+    "@aws-sdk/client-dynamodb": "^3.656.0",
+    "@aws-sdk/lib-dynamodb": "^3.656.0",
+    "aws-sdk": "^2.1691.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
@@ -33,6 +36,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.2",
+    "@types/aws-sdk": "^2.7.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/supertest": "^6.0.2",
