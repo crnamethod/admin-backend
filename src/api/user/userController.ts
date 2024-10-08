@@ -16,6 +16,21 @@ class UserController {
     const serviceResponse = await userService.findById(userId);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  public updateUser: RequestHandler = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const profileUpdates = req.body;
+
+    const serviceResponse = await userService.updateProfile(userId, profileUpdates);
+    return handleServiceResponse(serviceResponse, res);
+  };
+
+  public createUser: RequestHandler = async (req: Request, res: Response) => {
+    const userProfile = req.body as { email: string; userId: string };
+
+    const serviceResponse = await userService.createProfile(userProfile);
+    return handleServiceResponse(serviceResponse, res);
+  };
 }
 
 export const userController = new UserController();

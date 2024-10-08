@@ -45,6 +45,33 @@ export class UserService {
       return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
     }
   }
+
+  async updateProfile(
+    userId: string,
+    profileUpdates: Partial<UserProfile>,
+  ): Promise<ServiceResponse<UserProfile | null>> {
+    try {
+      const updatedProfile = await this.userRepository.updateProfileAsync(userId, profileUpdates);
+      return ServiceResponse.success<UserProfile>("Profile updated", updatedProfile, StatusCodes.OK);
+    } catch (ex) {
+      const errorMessage = `Error updating profile: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createProfile(
+    profile: Omit<UserProfile, "createdAt" | "updatedAt" | "isSubscriber">,
+  ): Promise<ServiceResponse<null>> {
+    try {
+      await this.userRepository.createProfileAsync(profile);
+      return ServiceResponse.success<null>("Profile created", null, StatusCodes.CREATED);
+    } catch (ex) {
+      const errorMessage = `Error creating profile: ${(ex as Error).message}`;
+      logger.error(errorMessage);
+      return ServiceResponse.failure(errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+  }
 }
 
 export const userService = new UserService();
