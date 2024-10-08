@@ -29,9 +29,9 @@ app.use(rateLimiter);
 app.use(requestLogger);
 
 // Routes
-app.use("/health-check", healthCheckRouter);
-app.use("/user", userRouter);
-app.use("/school", schoolRouter);
+app.use("/api/health-check", healthCheckRouter);
+app.use("/api/user", userRouter);
+app.use("/api/school", schoolRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
