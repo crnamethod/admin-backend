@@ -5,7 +5,6 @@ import { getSchool, getSchools, updateSchools } from "./schoolService";
 
 class SchoolController {
   public getShools: RequestHandler = async (req: Request, res: Response) => {
-    const serviceResponse = await getSchools();
     try {
       const data = await getSchools();
       res.status(200).json(data);
