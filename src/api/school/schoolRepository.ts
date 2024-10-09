@@ -11,7 +11,7 @@ export const listSchools = async (
   name?: string,
   lastSchoolId?: string,
   limit = 10,
-): Promise<{ schools: School[]; lastEvaluatedKey?: string } | []> => {
+): Promise<{ schools: School[]; lastEvaluatedId?: string; lastEvaluatedName?: string } | []> => {
   const params: any = {
     TableName,
     Limit: limit,
@@ -37,9 +37,14 @@ export const listSchools = async (
     });
 
     // Extract the last reviewId if there's more data to retrieve
-    const lastEvaluatedReviewId = LastEvaluatedKey ? LastEvaluatedKey.reviewId?.S : undefined;
+    const lastEvaluatedId = LastEvaluatedKey ? LastEvaluatedKey.id?.S : undefined;
+    const lastEvaluatedName = LastEvaluatedKey ? LastEvaluatedKey.name?.S : undefined;
 
-    return { schools, lastEvaluatedKey: lastEvaluatedReviewId };
+    return {
+      schools,
+      lastEvaluatedId: lastEvaluatedId,
+      lastEvaluatedName: lastEvaluatedName,
+    };
   } catch (error) {
     console.error("Error scanning schools:", error);
     throw new Error("Could not retrieve schools information");
