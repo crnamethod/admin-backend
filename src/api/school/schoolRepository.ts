@@ -7,15 +7,27 @@ import { type School, SchoolSchema } from "./schoolModel";
 
 const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
-export const listSchools = async (): Promise<School[] | []> => {
+export const listSchools = async (
+  name?: string,
+  lastSchoolId?: string,
+  limit = 10,
+): Promise<{ schools: School[]; lastEvaluatedKey?: string } | []> => {
   const params: any = {
     TableName,
-    // Limit: 1,
+    Limit: limit,
   };
+
+  // If lastReviewId is provided, set it as the ExclusiveStartKey for pagination
+  if (lastSchoolId && name) {
+    params.ExclusiveStartKey = {
+      id: { S: lastSchoolId },
+      name: { S: name },
+    };
+  }
 
   try {
     // Scan the DynamoDB table
-    const { Items } = await dynamoClient.send(new ScanCommand(params));
+    const { Items, LastEvaluatedKey } = await dynamoClient.send(new ScanCommand(params));
 
     if (!Items) return [];
 
@@ -24,7 +36,10 @@ export const listSchools = async (): Promise<School[] | []> => {
       return schoolData as School;
     });
 
-    return schools || [];
+    // Extract the last reviewId if there's more data to retrieve
+    const lastEvaluatedReviewId = LastEvaluatedKey ? LastEvaluatedKey.reviewId?.S : undefined;
+
+    return { schools, lastEvaluatedKey: lastEvaluatedReviewId };
   } catch (error) {
     console.error("Error scanning schools:", error);
     throw new Error("Could not retrieve schools information");

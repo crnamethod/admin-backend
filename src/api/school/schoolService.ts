@@ -1,8 +1,16 @@
 import { School } from "./schoolModel";
 import { listSchool, listSchools, updateSchool as updateSchoolRepo } from "./schoolRepository";
 
-export const getSchools = async () => {
-  const data = await listSchools();
+interface GetReviewsQuery {
+  limit?: number; // Optional number
+  id?: string; // Optional string
+  name?: string; // Optional string
+}
+export const getSchools = async (query: GetReviewsQuery) => {
+  const { name, limit, id: lastSchoolId } = query;
+  const parsedLimit = limit ? Number(limit) : undefined;
+
+  const data = await listSchools(name, lastSchoolId, parsedLimit);
   return data;
 };
 

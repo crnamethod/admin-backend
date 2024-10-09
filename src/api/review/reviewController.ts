@@ -6,7 +6,6 @@ import { getReview, getReviews } from "./reviewService";
 class ReviewController {
   public getReviews: RequestHandler = async (req: Request, res: Response) => {
     try {
-      // const lastReviewId = req.query.reviewId as string;
       const data = await getReviews(req.query);
       res.status(200).json(data);
     } catch (error: any) {

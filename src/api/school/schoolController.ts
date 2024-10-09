@@ -6,7 +6,7 @@ import { getSchool, getSchools, updateSchools } from "./schoolService";
 class SchoolController {
   public getShools: RequestHandler = async (req: Request, res: Response) => {
     try {
-      const data = await getSchools();
+      const data = await getSchools(req.query);
       res.status(200).json(data);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

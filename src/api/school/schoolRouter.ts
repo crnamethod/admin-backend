@@ -12,14 +12,34 @@ export const schoolRouter: Router = express.Router();
 
 schoolRegistry.register("School", SchoolSchema);
 
+const GetSchoolsQuerySchema = z.object({
+  query: z
+    .object({
+      limit: z
+        .string()
+        .optional()
+        .transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
+      id: z.string().optional(),
+      name: z.string().optional(),
+    })
+    .refine((data) => !data.id || (data.id && data.name), {
+      message: "'name' is required when 'id' is provided.",
+      path: ["name"],
+    })
+    .refine((data) => !data.name || (data.name && data.id), {
+      message: "'id' is required when 'name' is provided.",
+      path: ["id"],
+    }),
+});
+
 schoolRegistry.registerPath({
   method: "get",
-  path: "/schools",
+  path: "/school",
   tags: ["School"],
   responses: createApiResponse(z.array(SchoolSchema), "Success"),
 });
 
-schoolRouter.get("/", schoolController.getShools);
+schoolRouter.get("/", validateRequest(GetSchoolsQuerySchema), schoolController.getShools);
 
 const GetSchoolSchema = z.object({
   params: z.object({ id: z.string() }),
@@ -27,7 +47,7 @@ const GetSchoolSchema = z.object({
 
 schoolRegistry.registerPath({
   method: "get",
-  path: "/schools/{id}",
+  path: "/school/{id}",
   tags: ["School"],
   request: { params: GetSchoolSchema.shape.params },
   responses: createApiResponse(SchoolSchema, "Success"),
