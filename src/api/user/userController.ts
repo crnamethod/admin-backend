@@ -31,6 +31,12 @@ class UserController {
     const serviceResponse = await userService.createProfile(userProfile);
     return handleServiceResponse(serviceResponse, res);
   };
+
+  public changePassword: RequestHandler = async (req: Request, res: Response) => {
+    const data = req.body as { email: string; password: string };
+    const serviceResponse = await userService.changePassword(data.email, data.password);
+    res.status(200).json({ message: "Password changed successfully " });
+  };
 }
 
 export const userController = new UserController();

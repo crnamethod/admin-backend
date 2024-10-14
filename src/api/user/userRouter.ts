@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetUserSchema, UserProfileSchema, UserSchema } from "@/api/user/userModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
+import { UpdatePasswordSchema } from "./dto/update-password.dto";
 import { userController } from "./userController";
 
 export const userRegistry = new OpenAPIRegistry();
@@ -85,4 +86,14 @@ userRegistry.registerPath({
   },
   responses: createApiResponse(CreateProfileResponseSchema, "Profile created successfully"),
 });
+
 userRouter.post("/profile", validateRequest(CreateUserProfileSchema), userController.createUser);
+
+// -------------------
+userRegistry.registerPath({
+  method: "put",
+  path: "/user/profile/{userId}",
+  tags: ["User"],
+  responses: createApiResponse(UpdatePasswordSchema, "Password changed successfully"),
+});
+userRouter.put("/profile/:userId", validateRequest(UpdatePasswordSchema), userController.changePassword);

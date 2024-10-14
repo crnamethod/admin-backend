@@ -16,6 +16,8 @@ export const env = cleanEnv(process.env, {
   AWS_ACCESS_KEY_ID: str(),
   AWS_SECRET_ACCESS_KEY: str(),
   AWS_DEFAULT_REGION: str(),
+  USER_POOL_ID: str(),
+  COGNITO_CLIENT_ID: str(),
   DYNAMODB_TBL_SCHOOLS: str(),
   DYNAMODB_TBL_REVIEWS: str(),
   DYNAMODB_TBL_USERPROFILE: str(),

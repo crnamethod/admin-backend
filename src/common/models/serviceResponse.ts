@@ -1,6 +1,11 @@
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 
+export enum ResponseStatus {
+  Success = 0,
+  Failed = 1,
+}
+
 export class ServiceResponse<T = null> {
   readonly success: boolean;
   readonly message: string;
