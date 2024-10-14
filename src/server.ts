@@ -12,6 +12,7 @@ import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
 import { reviewRouter } from "./api/review/reviewRouter";
 import { schoolRouter } from "./api/school/schoolRouter";
+import { clinicRouter } from "./api/clinic/clinicRouter";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -34,6 +35,7 @@ app.use("/api/health-check", healthCheckRouter);
 app.use("/api/user", userRouter);
 app.use("/api/school", schoolRouter);
 app.use("/api/review", reviewRouter);
+app.use("/api/clinic", clinicRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

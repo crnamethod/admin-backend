@@ -18,6 +18,9 @@ const GetSchoolsQuerySchema = z.object({
       limit: z
         .string()
         .optional()
+        .refine((val) => !val || !isNaN(Number(val)), {
+          message: "Limit must be a valid number.",
+        })
         .transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
       id: z.string().optional(),
       name: z.string().optional(),
@@ -39,7 +42,11 @@ schoolRegistry.registerPath({
   responses: createApiResponse(z.array(SchoolSchema), "Success"),
 });
 
-schoolRouter.get("/", validateRequest(GetSchoolsQuerySchema), schoolController.getShools);
+schoolRouter.get(
+  "/",
+  validateRequest(GetSchoolsQuerySchema),
+  schoolController.getShools
+);
 
 const GetSchoolSchema = z.object({
   params: z.object({ id: z.string() }),
@@ -53,4 +60,8 @@ schoolRegistry.registerPath({
   responses: createApiResponse(SchoolSchema, "Success"),
 });
 
-schoolRouter.get("/:id", validateRequest(GetSchoolSchema), schoolController.getShool);
+schoolRouter.get(
+  "/:id",
+  validateRequest(GetSchoolSchema),
+  schoolController.getShool
+);

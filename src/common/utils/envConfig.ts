@@ -20,4 +20,6 @@ export const env = cleanEnv(process.env, {
   DYNAMODB_TBL_REVIEWS: str(),
   DYNAMODB_TBL_USERPROFILE: str(),
   DYNAMODB_TBL_USERFAVORITES: str(),
+  DYNAMODB_TBL_CLINICS: str(),
+  DYNAMODB_TBL_CLINIC_REVIEWS: str(),
 });
