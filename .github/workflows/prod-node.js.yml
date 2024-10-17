@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: prod-runner-1
+    runs-on: prod-runner
     strategy:
       matrix:
         node-version: [22.x]
