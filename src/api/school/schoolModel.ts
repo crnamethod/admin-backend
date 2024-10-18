@@ -16,8 +16,8 @@ export const SchoolSchema = z.object({
     city: z.string(),
   }),
 
-  rank: z.number(),
-  ratings: z.number(),
+  rank: z.number().optional(),
+  ratings: z.number().optional(),
 
   images: z.object({
     thumbnailUrl: z.string(),
@@ -63,26 +63,26 @@ export const SchoolSchema = z.object({
 
   other: z.object({
     gre: z.boolean(),
-    greNotes: z.string(),
+    greNotes: z.string().optional(),
     shadowExperience: z.boolean(),
-    shadowExperienceNotes: z.string(),
+    shadowExperienceNotes: z.string().optional(),
     ccrn: z.boolean(),
-    ccrnNotes: z.string(),
+    ccrnNotes: z.string().optional(),
     nursingCas: z.boolean(),
-    nursingCasNotes: z.string(),
+    nursingCasNotes: z.string().optional(),
     bsnRequired: z.boolean(),
-    bsnRequiredNotes: z.string(),
+    bsnRequiredNotes: z.string().optional(),
     onlineComponents: z.boolean(),
-    onlineComponentsNotes: z.string(),
+    onlineComponentsNotes: z.string().optional(),
     last60Units: z.boolean(),
-    last60UnitsNotes: z.string(),
+    last60UnitsNotes: z.string().optional(),
   }),
 
   tuitionFee: z.object({
     inStateTuition: z.number(),
-    inStateTuitionNotes: z.string(),
+    inStateTuitionNotes: z.string().optional(),
     outStateTuition: z.number(),
-    outStateTuitionNotes: z.string(),
+    outStateTuitionNotes: z.string().optional(),
   }),
 
   prerequisite: z.object({
@@ -130,18 +130,12 @@ export const SchoolSchema = z.object({
   }),
 
   statistics: z.object({
-    acceptanceRate: z.number(),
-    attritionRate: z.number(),
-    boardPassingRate: z.number(),
+    acceptanceRate: z.number().optional(),
+    attritionRate: z.number().optional(),
+    boardPassingRate: z.number().optional(),
   }),
+
+  clinicIds: z.array(z.string()).optional(),
 });
 
 export type School = z.infer<typeof SchoolSchema>;
-
-export interface SchoolCompareReturn {
-  location: {
-    city: string;
-    state: string;
-  };
-  title: string;
-}

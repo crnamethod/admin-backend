@@ -1,5 +1,6 @@
-import { School } from "./schoolModel";
-import { listSchool, listSchools, updateSchool as updateSchoolRepo } from "./schoolRepository";
+import type { UpdateSchoolDto } from "./dto/update-school.dto";
+import type { School } from "./schoolModel";
+import { createSchool, listSchool, listSchools, updateSchool as updateSchoolRepo } from "./schoolRepository";
 
 interface GetReviewsQuery {
   limit?: number; // Optional number
@@ -19,11 +20,11 @@ export const getSchool = async (schoolId: string) => {
   return data;
 };
 
-export const updateSchools = async (updates: any[]) => {
-  const updatePromises = updates.map((update: any) => {
-    const { id, name, ...rest } = update;
-    return updateSchoolRepo(id, name, rest);
-  });
-  const updatedSchools = await Promise.all(updatePromises);
-  return updatedSchools;
+export const updateSchool = async (updateDto: UpdateSchoolDto) => {
+  const { id, name, ...rest } = updateDto;
+  return await updateSchoolRepo(id, name, rest);
+};
+
+export const addSchool = async (school: School) => {
+  return await createSchool(school);
 };

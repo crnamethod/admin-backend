@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from "express";
 
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
-import { getSchool, getSchools, updateSchools } from "./schoolService";
+import { addSchool, getSchool, getSchools, updateSchool } from "./schoolService";
 
 class SchoolController {
   public getShools: RequestHandler = async (req: Request, res: Response) => {
@@ -26,9 +26,17 @@ class SchoolController {
 
   public updateShool: RequestHandler = async (req: Request, res: Response) => {
     try {
-      const updates = req.body.update;
-      const data = await updateSchools(updates);
+      const data = await updateSchool(req.body);
       res.status(200).json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+
+  public addSchool: RequestHandler = async (req: Request, res: Response) => {
+    try {
+      const data = await addSchool(req.body);
+      res.status(201).json(data);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

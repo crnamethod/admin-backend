@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
+import { UpdateSchoolSchema } from "./dto/update-school.dto";
 import { schoolController } from "./schoolController";
 import { SchoolSchema } from "./schoolModel";
 
@@ -18,7 +19,7 @@ const GetSchoolsQuerySchema = z.object({
       limit: z
         .string()
         .optional()
-        .refine((val) => !val || !isNaN(Number(val)), {
+        .refine((val) => !val || !Number.isNaN(Number(val)), {
           message: "Limit must be a valid number.",
         })
         .transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
@@ -42,11 +43,7 @@ schoolRegistry.registerPath({
   responses: createApiResponse(z.array(SchoolSchema), "Success"),
 });
 
-schoolRouter.get(
-  "/",
-  validateRequest(GetSchoolsQuerySchema),
-  schoolController.getShools
-);
+schoolRouter.get("/", validateRequest(GetSchoolsQuerySchema), schoolController.getShools);
 
 const GetSchoolSchema = z.object({
   params: z.object({ id: z.string() }),
@@ -60,8 +57,41 @@ schoolRegistry.registerPath({
   responses: createApiResponse(SchoolSchema, "Success"),
 });
 
-schoolRouter.get(
-  "/:id",
-  validateRequest(GetSchoolSchema),
-  schoolController.getShool
-);
+schoolRouter.get("/:id", validateRequest(GetSchoolSchema), schoolController.getShool);
+
+schoolRegistry.registerPath({
+  method: "post",
+  path: "/school/update",
+  tags: ["School"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: UpdateSchoolSchema,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(z.array(SchoolSchema), "Schools updated successfully"),
+});
+
+schoolRouter.post("/update", validateRequest(z.object({ body: UpdateSchoolSchema })), schoolController.updateShool);
+
+schoolRegistry.registerPath({
+  method: "post",
+  path: "/school",
+  tags: ["School"],
+  description: "Add a new school",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: SchoolSchema,
+        },
+      },
+    },
+  },
+  responses: createApiResponse(SchoolSchema, "School added successfully"),
+});
+
+schoolRouter.post("/", validateRequest(z.object({ body: SchoolSchema })), schoolController.addSchool);

@@ -1,13 +1,9 @@
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-import {
-  GetItemCommand,
-  QueryCommand,
-  ScanCommand,
-  ScanCommandInput,
-} from "@aws-sdk/client-dynamodb";
-import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetItemCommand, QueryCommand, ScanCommand, type ScanCommandInput } from "@aws-sdk/client-dynamodb";
+import { PutCommand, UpdateCommand, type UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import { type School, SchoolSchema } from "./schoolModel";
 
 const TableName = env.DYNAMODB_TBL_SCHOOLS;
@@ -15,11 +11,8 @@ const TableName = env.DYNAMODB_TBL_SCHOOLS;
 export const listSchools = async (
   name?: string,
   lastSchoolId?: string,
-  limit = 10
-): Promise<
-  | { schools: School[]; lastEvaluatedId?: string; lastEvaluatedName?: string }
-  | []
-> => {
+  limit = 10,
+): Promise<{ schools: School[]; lastEvaluatedId?: string; lastEvaluatedName?: string } | []> => {
   const params: ScanCommandInput = {
     TableName,
     Limit: limit,
@@ -35,9 +28,7 @@ export const listSchools = async (
 
   try {
     // Scan the DynamoDB table
-    const { Items, LastEvaluatedKey } = await dynamoClient.send(
-      new ScanCommand(params)
-    );
+    const { Items, LastEvaluatedKey } = await dynamoClient.send(new ScanCommand(params));
 
     if (!Items) return [];
 
@@ -47,12 +38,8 @@ export const listSchools = async (
     });
 
     // Extract the last reviewId if there's more data to retrieve
-    const lastEvaluatedId = LastEvaluatedKey
-      ? LastEvaluatedKey.id?.S
-      : undefined;
-    const lastEvaluatedName = LastEvaluatedKey
-      ? LastEvaluatedKey.name?.S
-      : undefined;
+    const lastEvaluatedId = LastEvaluatedKey ? LastEvaluatedKey.id?.S : undefined;
+    const lastEvaluatedName = LastEvaluatedKey ? LastEvaluatedKey.name?.S : undefined;
 
     return {
       schools,
@@ -92,15 +79,17 @@ export const listSchool = async (schoolId: string): Promise<School | null> => {
   }
 };
 
-export const updateSchool = async (id: string, name: string, updates: any) => {
+export const updateSchool = async (
+  id: string,
+  name: string,
+  updates: Omit<UpdateSchoolDto, "id" | "name" | "clinicIds">,
+) => {
   const updateExpressionParts: string[] = [];
   const expressionAttributeNames: any = {};
   const expressionAttributeValues: any = {};
 
-  Object.keys(updates).forEach((key, index) => {
-    const attributeNames = key
-      .split(".")
-      .map((part, i) => `#attr${index}_${i}`);
+  Object.entries(updates).forEach(([key, value], index) => {
+    const attributeNames = key.split(".").map((part, i) => `#attr${index}_${i}`);
     const attributePath = attributeNames.join(".");
     const valueKey = `:val${index}`;
 
@@ -110,12 +99,12 @@ export const updateSchool = async (id: string, name: string, updates: any) => {
       expressionAttributeNames[attributeNames[i]] = part;
     });
 
-    expressionAttributeValues[valueKey] = updates[key];
+    expressionAttributeValues[valueKey] = value;
   });
 
   const updateExpression = `SET ${updateExpressionParts.join(", ")}`;
 
-  const params: any = {
+  const params: UpdateCommandInput = {
     TableName,
     Key: { id, name },
     UpdateExpression: updateExpression,
@@ -131,8 +120,17 @@ export const updateSchool = async (id: string, name: string, updates: any) => {
     return data.Attributes;
   } catch (error: any) {
     console.error("Update error:", error);
-    throw new Error(
-      `Failed to update school with id ${id} and name ${name}: ${error.message}`
-    );
+    throw new Error(`Failed to update school with id ${id} and name ${name}: ${error.message}`);
   }
+};
+
+export const createSchool = async (school: School) => {
+  const params = {
+    TableName,
+    Item: school,
+  };
+  console.log(params);
+  const command = new PutCommand(params);
+  const data = await dynamoClient.send(command);
+  return data;
 };
