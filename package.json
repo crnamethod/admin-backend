@@ -1,9 +1,8 @@
 {
-  "name": "express-typescript-boilerplate",
+  "name": "crna-admin-api",
   "version": "1.0.14",
   "description": "An Express boilerplate backend",
-  "author": "Edwin Hernandez",
-  "repository": "edwinhern/express-typescript-2024",
+  "author": "Web Catalyst",
   "license": "MIT",
   "main": "index.ts",
   "private": true,
