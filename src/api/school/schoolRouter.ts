@@ -60,7 +60,7 @@ schoolRegistry.registerPath({
 schoolRouter.get("/:id", validateRequest(GetSchoolSchema), schoolController.getShool);
 
 schoolRegistry.registerPath({
-  method: "post",
+  method: "patch",
   path: "/school/update",
   tags: ["School"],
   request: {
@@ -75,7 +75,7 @@ schoolRegistry.registerPath({
   responses: createApiResponse(z.array(SchoolSchema), "Schools updated successfully"),
 });
 
-schoolRouter.post("/update", validateRequest(z.object({ body: UpdateSchoolSchema })), schoolController.updateShool);
+schoolRouter.patch("/update", validateRequest(z.object({ body: UpdateSchoolSchema })), schoolController.updateShool);
 
 schoolRegistry.registerPath({
   method: "post",

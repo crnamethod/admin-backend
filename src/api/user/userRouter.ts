@@ -97,3 +97,5 @@ userRegistry.registerPath({
   responses: createApiResponse(UpdatePasswordSchema, "Password changed successfully"),
 });
 userRouter.put("/profile/:userId", validateRequest(UpdatePasswordSchema), userController.changePassword);
+
+userRouter.post("/upload", userController.uploadPicture);

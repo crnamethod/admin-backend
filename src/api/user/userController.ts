@@ -1,6 +1,7 @@
 import type { Request, RequestHandler, Response } from "express";
 
 import { userService } from "@/api/user/userService";
+import { upload } from "@/common/services/s3.service";
 import { handleServiceResponse } from "@/common/utils/httpHandlers";
 
 class UserController {
@@ -36,6 +37,22 @@ class UserController {
     const data = req.body as { email: string; password: string };
     const serviceResponse = await userService.changePassword(data.email, data.password);
     res.status(200).json({ message: "Password changed successfully " });
+  };
+
+  public uploadPicture: RequestHandler = async (req: Request, res: Response) => {
+    console.log(11);
+    upload.single("image")(req, res, async (err: any) => {
+      if (err) {
+        return res.status(500).json({ error: "Failed to upload image", details: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const fileUrl = (req.file as Express.MulterS3.File).location;
+      res.status(200).json({ message: "Image uploaded successfully", fileUrl });
+    });
   };
 }
 
