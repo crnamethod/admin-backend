@@ -44,7 +44,7 @@ class SchoolController {
   };
 
   public uploadPicture: RequestHandler = async (req: Request, res: Response) => {
-    upload.single("image")(req, res, async (err: any) => {
+    upload.single("banner")(req, res, async (err: any) => {
       if (err) {
         return res.status(500).json({ error: "Failed to upload image", details: err.message });
       }
