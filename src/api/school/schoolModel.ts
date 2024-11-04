@@ -136,6 +136,7 @@ export const SchoolSchema = z.object({
   }),
 
   clinicIds: z.array(z.string()).optional(),
+  banner: z.string().optional(),
 });
 
 export type School = z.infer<typeof SchoolSchema>;

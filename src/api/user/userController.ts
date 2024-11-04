@@ -40,7 +40,6 @@ class UserController {
   };
 
   public uploadPicture: RequestHandler = async (req: Request, res: Response) => {
-    console.log(11);
     upload.single("image")(req, res, async (err: any) => {
       if (err) {
         return res.status(500).json({ error: "Failed to upload image", details: err.message });

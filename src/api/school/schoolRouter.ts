@@ -95,3 +95,9 @@ schoolRegistry.registerPath({
 });
 
 schoolRouter.post("/", validateRequest(z.object({ body: SchoolSchema })), schoolController.addSchool);
+
+schoolRouter.post(
+  "/upload",
+  // validateRequest(z.object({ body: UpdateSchoolSchema })),
+  schoolController.uploadPicture,
+);
