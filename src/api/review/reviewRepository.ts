@@ -6,6 +6,7 @@ import {
   ScanCommand,
   type ScanCommandInput,
   UpdateItemCommand,
+  QueryCommand,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import type { Review } from "./reviewModel";
@@ -14,7 +15,7 @@ const TableName = env.DYNAMODB_TBL_REVIEWS;
 
 export const listReviews = async (
   lastReviewId?: string, // Review ID to start from (for pagination)
-  limit = 10, // Number of items to return per page
+  limit = 10 // Number of items to return per page
 ): Promise<{ reviews: Review[]; lastEvaluatedKey?: string }> => {
   const params: ScanCommandInput = {
     TableName,
@@ -30,7 +31,9 @@ export const listReviews = async (
 
   try {
     // Scan the DynamoDB table
-    const { Items, LastEvaluatedKey } = await dynamoClient.send(new ScanCommand(params));
+    const { Items, LastEvaluatedKey } = await dynamoClient.send(
+      new ScanCommand(params)
+    );
 
     if (!Items) return { reviews: [] };
 
@@ -41,7 +44,9 @@ export const listReviews = async (
     });
 
     // Extract the last reviewId if there's more data to retrieve
-    const lastEvaluatedReviewId = LastEvaluatedKey ? LastEvaluatedKey.reviewId?.S : undefined;
+    const lastEvaluatedReviewId = LastEvaluatedKey
+      ? LastEvaluatedKey.reviewId?.S
+      : undefined;
 
     return { reviews, lastEvaluatedKey: lastEvaluatedReviewId };
   } catch (error) {
@@ -67,6 +72,31 @@ export const listReview = async (reviewId: string) => {
     return review;
   } catch (error) {
     console.error("Error fetching review by ID:", error);
+    throw new Error("Could not retrieve review information");
+  }
+};
+
+export const ReviewPerSchool = async (schoolId: string) => {
+  const params = {
+    TableName: TableName,
+    FilterExpression: "#schoolId = :schoolId",
+    ExpressionAttributeNames: {
+      "#schoolId": "schoolId",
+    },
+    ExpressionAttributeValues: {
+      ":schoolId": { S: schoolId },
+    },
+  };
+
+  try {
+    const { Items } = await dynamoClient.send(new ScanCommand(params));
+    if (!Items) return null;
+
+    const reviews = Items.map((item) => unmarshall(item) as Review);
+
+    return reviews;
+  } catch (error) {
+    console.error("Error fetching review by school id:", error);
     throw new Error("Could not retrieve review information");
   }
 };

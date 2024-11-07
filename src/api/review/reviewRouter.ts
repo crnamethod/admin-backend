@@ -6,6 +6,7 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
 import { reviewController } from "./reviewController";
 import { ReviewSchema } from "./reviewModel";
+import { GetSchoolSchema } from "./dto/school.dto";
 
 export const reviewRegistry = new OpenAPIRegistry();
 export const reviewRouter: Router = express.Router();
@@ -29,3 +30,16 @@ reviewRegistry.registerPath({
 });
 
 reviewRouter.get("/:reviewId", reviewController.getReview);
+
+reviewRegistry.registerPath({
+  method: "get",
+  path: "/reviews/school/{schoolId}",
+  tags: ["Review"],
+  responses: createApiResponse(z.array(ReviewSchema), "Success"),
+});
+
+reviewRouter.get(
+  "/school/:schoolId",
+  validateRequest(GetSchoolSchema),
+  reviewController.getReviewPerSchool
+);

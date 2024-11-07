@@ -1,7 +1,17 @@
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-import { QueryCommand, ScanCommand, type ScanCommandInput } from "@aws-sdk/client-dynamodb";
-import { PutCommand, UpdateCommand, type UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
+import {
+  QueryCommand,
+  ScanCommand,
+  type ScanCommandInput,
+} from "@aws-sdk/client-dynamodb";
+import {
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  UpdateCommand,
+  type UpdateCommandInput,
+} from "@aws-sdk/lib-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import type { School } from "./schoolModel";
@@ -32,16 +42,39 @@ export const listSchool = async (schoolId: string): Promise<School | null> => {
   }
 };
 
+export const getSchoolByIdAndName = async (
+  id: string,
+  name: string
+): Promise<School | null> => {
+  const params = {
+    TableName,
+    Key: {
+      id,
+      name,
+    },
+  };
+
+  const { Item } = await dynamoClient.send(new GetCommand(params));
+
+  if (!Item) return null;
+
+  return Item as School;
+};
+
 export const updateSchool = async (
   id: string,
   name: string,
-  updates: Partial<Omit<UpdateSchoolDto, "id" | "name" | "clinicIds">>,
+  updates: Partial<Omit<UpdateSchoolDto, "id" | "name" | "clinicIds">>
 ) => {
   // Flatten nested objects into dot notation
   const flattenObject = (obj: any, prefix = ""): Record<string, any> => {
     return Object.keys(obj).reduce((acc: Record<string, any>, key: string) => {
       const prefixKey = prefix ? `${prefix}.${key}` : key;
-      if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key])) {
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
         Object.assign(acc, flattenObject(obj[key], prefixKey));
       } else {
         acc[prefixKey] = obj[key];
@@ -104,8 +137,12 @@ export const updateSchool = async (
 export const listSchools = async (
   name?: string,
   lastSchoolId?: string,
-  limit = 10,
-): Promise<{ schools: School[]; lastEvaluatedId?: string; lastEvaluatedName?: string }> => {
+  limit = 10
+): Promise<{
+  schools: School[];
+  lastEvaluatedId?: string;
+  lastEvaluatedName?: string;
+}> => {
   const params: ScanCommandInput = {
     TableName,
     Limit: limit,
@@ -119,7 +156,9 @@ export const listSchools = async (
   }
 
   try {
-    const { Items, LastEvaluatedKey } = await dynamoClient.send(new ScanCommand(params));
+    const { Items, LastEvaluatedKey } = await dynamoClient.send(
+      new ScanCommand(params)
+    );
 
     if (!Items) return { schools: [] };
 
@@ -140,7 +179,8 @@ export const createSchool = async (school: School) => {
   const params = {
     TableName,
     Item: school,
-    ConditionExpression: "attribute_not_exists(id) AND attribute_not_exists(#name)",
+    ConditionExpression:
+      "attribute_not_exists(id) AND attribute_not_exists(#name)",
     ExpressionAttributeNames: {
       "#name": "name",
     },
@@ -153,5 +193,47 @@ export const createSchool = async (school: School) => {
   } catch (error: any) {
     console.error("Create error:", error);
     throw new Error(`Failed to create school: ${error.message}`);
+  }
+};
+
+export const checkDuplicate = async (id: string, name: string) => {
+  const params = {
+    TableName: TableName,
+    KeyConditionExpression: "#id = :id",
+    ExpressionAttributeNames: {
+      "#id": "id",
+    },
+    ExpressionAttributeValues: {
+      ":id": { S: id },
+    },
+  };
+
+  try {
+    const { Items } = await dynamoClient.send(new QueryCommand(params));
+    if (!Items || Items.length === 0) return null;
+
+    const schools = Items.map((item) => unmarshall(item) as School);
+    return schools;
+  } catch (error) {
+    console.error("Error fetching school by ID:", error);
+    throw new Error("Could not retrieve school information");
+  }
+};
+
+export const deleteSchool = async (id: string, name: string) => {
+  const params = {
+    TableName,
+    Key: {
+      id,
+      name,
+    },
+  };
+
+  try {
+    await dynamoClient.send(new DeleteCommand(params));
+    console.log(`Item with id=${id} and name=${name} deleted successfully.`);
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    throw new Error("Could not delete item");
   }
 };
