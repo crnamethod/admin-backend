@@ -55,15 +55,33 @@ class SchoolController {
 
       const fileUrl = (req.file as Express.MulterS3.File).location;
 
-      // update banner
-      const data = {
-        id: req.body.id,
-        name: req.body.name,
-        banner: fileUrl,
-      };
-      await updateSchool(data);
+      try {
+        // Update only the images.imageUrl field
+        const data = {
+          id: req.body.id,
+          name: req.body.name,
+          images: {
+            imageUrl: fileUrl,
+            thumbnailUrl: fileUrl,
+          },
+        };
 
-      res.status(200).json({ message: "Image uploaded successfully", fileUrl });
+        console.log("Updating school with image URL:", data);
+
+        const result = await updateSchool(data);
+        console.log("Update result:", result);
+
+        res.status(200).json({
+          message: "Image uploaded successfully",
+          fileUrl,
+        });
+      } catch (error) {
+        console.error("Error updating school with image:", error);
+        res.status(500).json({
+          error: "Failed to update school with image URL",
+          details: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
     });
   };
 }
