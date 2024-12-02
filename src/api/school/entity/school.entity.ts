@@ -3,6 +3,7 @@ import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { env } from "@/common/utils/envConfig";
 
+import type { PrerequisiteSchoolEntity } from "@/api/prerequisite/entities/prerequisite-school.entity";
 import type { DegreeTypeEnum, ProgramStructureEnum, SchoolDto } from "../school.model";
 
 export class SchoolEntity implements SchoolDto {
@@ -198,5 +199,5 @@ export class SchoolEntity implements SchoolDto {
   createdAt!: string;
   updatedAt!: string;
 
-  // prerequisites?: PrerequisiteSchoolEntity[];
+  prerequisites?: PrerequisiteSchoolEntity[];
 }

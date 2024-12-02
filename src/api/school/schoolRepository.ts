@@ -16,6 +16,7 @@ import { updateDataHelper } from "@/common/utils/update";
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { capitalize } from "@/common/utils/string";
 import type { RangeFilterDto } from "@/common/validators/common.validator";
+import { prerequisiteRepository } from "../prerequisite/prerequisite.repository";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
 import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
@@ -275,9 +276,9 @@ class SchoolRepository {
 
     const { Item } = await dynamoClient.send(new GetCommand(params));
 
-    // const prerequisites = await prerequisiteRepository.findAllBySchool(id);
+    const prerequisites = await prerequisiteRepository.findAllBySchool(id);
 
-    return Item ? new SchoolEntity({ ...Item /* prerequisites */ }) : null;
+    return Item ? new SchoolEntity({ ...Item, prerequisites }) : null;
   }
 
   private eitherOrHelper(data: string[], key: string) {

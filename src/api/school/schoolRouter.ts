@@ -28,14 +28,14 @@ schoolRegistry.registerPath({
 schoolRouter.get("/", validateRequest({ query: GetSchoolsQuerySchema }), schoolController.getShools);
 
 const GetSchoolSchema = z.object({
-  params: z.object({ id: z.string() }),
+  id: z.string(),
 });
 
 schoolRegistry.registerPath({
   method: "get",
   path: "/school/{id}",
   tags: ["School"],
-  request: { params: GetSchoolSchema.shape.params },
+  request: { params: GetSchoolSchema },
   responses: createApiResponse(SchoolSchema, "Success"),
 });
 
