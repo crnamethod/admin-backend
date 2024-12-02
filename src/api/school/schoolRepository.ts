@@ -21,7 +21,7 @@ import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import { SchoolEntity } from "./entity/school.entity";
 
-const TableName = env.DYNAMODB_TBL_SCHOOLS_NEW;
+const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
 class SchoolRepository {
   async findAllSchoolsWithPaginated(body: GetSchoolsQueryDto) {
