@@ -1,10 +1,6 @@
 import type { z } from "zod";
 
-import { SchoolSchema } from "../schoolModel";
-
-export const UpdateSchoolSchema = SchoolSchema.partial().extend({
-  id: SchoolSchema.shape.id,
-  name: SchoolSchema.shape.name,
-});
+import { CreateSchoolSchema } from "./create-school.dto";
 
 export type UpdateSchoolDto = z.infer<typeof UpdateSchoolSchema>;
+export const UpdateSchoolSchema = CreateSchoolSchema.partial().omit({ id: true, clinicIds: true }).strict();
