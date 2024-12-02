@@ -1,11 +1,18 @@
+import { AdminSetUserPasswordCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
+import type { UploadedFile } from "express-fileupload";
 import { StatusCodes } from "http-status-codes";
 
-import type { User, UserProfile } from "@/api/user/userModel";
+import type { UserProfile } from "@/api/user/userModel";
 import { UserRepository } from "@/api/user/userRepository";
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import { s3Service } from "@/common/services/s3.service";
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { env } from "@/common/utils/envConfig";
+import { HttpException } from "@/common/utils/http-exception";
 import { logger } from "@/server";
-import { AdminSetUserPasswordCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
+
+import type { CreateUserProfileDto } from "./dto/create-user.dto";
+import type { UserProfileBodyDto } from "./dto/upload-photo.dto";
 
 export class UserService {
   private userRepository: UserRepository;
@@ -14,49 +21,35 @@ export class UserService {
 
   constructor(repository: UserRepository = new UserRepository()) {
     this.userRepository = repository;
-    const region = env.AWS_DEFAULT_REGION;
-    this.cognitoClient = new CognitoIdentityProviderClient({ region });
+    this.cognitoClient = new CognitoIdentityProviderClient({ region: env.AWS_DEFAULT_REGION });
     this.userPoolId = env.USER_POOL_ID;
   }
 
   // Retrieves all users from the database
-  async findAll(): Promise<ServiceResponse<UserProfile[] | null>> {
-    try {
-      const users = await this.userRepository.getAllUsers();
-      if (!users || users.length === 0) {
-        return ServiceResponse.failure("No Users found", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success<UserProfile[]>("Users found", users);
-    } catch (ex) {
-      const errorMessage = `Error finding all users: $${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure(
-        "An error occurred while retrieving users.",
-        null,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-      );
+  async findAll(): Promise<ServiceResponse<UserProfile[] | []>> {
+    const users = await this.userRepository.getAllUsers();
+
+    if (!users || users.length === 0) {
+      return ServiceResponse.failure("No Users found", [], StatusCodes.NOT_FOUND);
     }
+
+    return ServiceResponse.success<UserProfile[]>("Users found", users);
   }
 
-  // Retrieves a single user by their ID
-  async findById(userId: string): Promise<ServiceResponse<UserProfile | null>> {
-    try {
-      const user = await this.userRepository.getUser(userId);
-      if (!user) {
-        return ServiceResponse.failure("User not found", null, StatusCodes.NOT_FOUND);
-      }
-      return ServiceResponse.success<UserProfile>("User found", user);
-    } catch (ex) {
-      const errorMessage = `Error finding user with id ${userId}:, ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure("An error occurred while finding user.", null, StatusCodes.INTERNAL_SERVER_ERROR);
-    }
+  async findOne(id: string, options?: GetCommandOptions) {
+    const school = await this.userRepository.findOne(id, options);
+    return school ?? null;
   }
 
-  async updateProfile(
-    userId: string,
-    profileUpdates: Partial<UserProfile>,
-  ): Promise<ServiceResponse<UserProfile | null>> {
+  async findOneOrThrow(id: string, options?: GetCommandOptions) {
+    const user = await this.userRepository.findOne(id, options);
+
+    if (!user) throw new HttpException("User not found", 404);
+
+    return ServiceResponse.success<UserProfile>("User found", user);
+  }
+
+  async update(userId: string, profileUpdates: Partial<UserProfile>): Promise<ServiceResponse<UserProfile | null>> {
     try {
       const updatedProfile = await this.userRepository.updateProfileAsync(userId, profileUpdates);
       return ServiceResponse.success<UserProfile>("Profile updated", updatedProfile, StatusCodes.OK);
@@ -67,9 +60,7 @@ export class UserService {
     }
   }
 
-  async createProfile(
-    profile: Omit<UserProfile, "createdAt" | "updatedAt" | "isSubscriber">,
-  ): Promise<ServiceResponse<null>> {
+  async create(profile: CreateUserProfileDto): Promise<ServiceResponse<null>> {
     try {
       await this.userRepository.createProfileAsync(profile);
       return ServiceResponse.success<null>("Profile created", null, StatusCodes.CREATED);
@@ -95,6 +86,22 @@ export class UserService {
       console.error("Error changing password by admin:", error);
       throw error; // Rethrow error to be handled by the caller
     }
+  }
+
+  // TODO
+  async upload({ id }: UserProfileBodyDto, file: UploadedFile) {
+    // // ? check if journalId is existing in the Database
+    // const foundUser = await this.findOneOrThrow(id, { ProjectionExpression: 'image_url' });
+    // if (foundUser?.image_url) {
+    //   // ? Delete the existing file from S3
+    //   await this.deleteFile(path, foundUser[type]);
+    // }
+    // const fileUrl = await s3Service.uploadFile(path, file, id);
+    // return await this.update(id, { [type]: fileUrl });
+  }
+
+  async deleteFile(path: string, key: string) {
+    return await s3Service.deleteFile(path, key);
   }
 }
 

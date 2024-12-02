@@ -1,16 +1,9 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
-extendZodWithOpenApi(z);
+import { nowISO } from "@/common/utils/date";
 
-export type User = z.infer<typeof UserSchema>;
-export const UserSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  email: z.string().email(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
+extendZodWithOpenApi(z);
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 export const UserProfileSchema = z.object({
@@ -22,9 +15,11 @@ export const UserProfileSchema = z.object({
   username: z.string().optional(),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
+  createdAt: z.string().optional().default(nowISO()),
+  updatedAt: z.string().optional().default(nowISO()),
 });
 
 // Input Validation for 'GET users/:id' endpoint
 export const GetUserSchema = z.object({
-  params: z.object({ id: z.string().uuid() }),
+  id: z.string().uuid(),
 });

@@ -3,31 +3,28 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
-import { GetUserSchema, UserProfileSchema, UserSchema } from "@/api/user/userModel";
+import { GetUserSchema, UserProfileSchema } from "@/api/user/userModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
+
+import { CreateUserProfileSchema } from "./dto/create-user.dto";
 import { UpdatePasswordSchema } from "./dto/update-password.dto";
+import { UpdateProfileSchema } from "./dto/update-profile.dto";
 import { userController } from "./userController";
 
 export const userRegistry = new OpenAPIRegistry();
 export const userRouter: Router = express.Router();
 
-export const CreateUserProfileSchema = z.object({
-  body: z.object({
-    UserProfileSchema,
-  }),
-});
-const UpdateProfileSchema = UserProfileSchema.partial();
 const CreateProfileResponseSchema = z.object({
   message: z.string(),
 });
 
-userRegistry.register("User", UserSchema);
+userRegistry.register("User", UserProfileSchema);
 
 userRegistry.registerPath({
   method: "get",
   path: "/user/profile",
   tags: ["User"],
-  responses: createApiResponse(z.array(UserSchema), "Success"),
+  responses: createApiResponse(z.array(UserProfileSchema), "Success"),
 });
 userRouter.get("/profile", userController.getUsers);
 
@@ -36,10 +33,10 @@ userRegistry.registerPath({
   method: "get",
   path: "/user/profile/{id}",
   tags: ["User"],
-  request: { params: GetUserSchema.shape.params },
-  responses: createApiResponse(UserSchema, "Success"),
+  request: { params: GetUserSchema },
+  responses: createApiResponse(UserProfileSchema, "Success"),
 });
-userRouter.get("/profile/:id", validateRequest(GetUserSchema), userController.getUser);
+userRouter.get("/profile/:id", validateRequest({ params: GetUserSchema }), userController.getUser);
 
 // -------------------
 userRegistry.registerPath({
@@ -67,7 +64,7 @@ userRegistry.registerPath({
   },
   responses: createApiResponse(UserProfileSchema, "Profile updated successfully"),
 });
-userRouter.patch("/profile/:userId", validateRequest(UpdateProfileSchema), userController.updateUser);
+userRouter.patch("/profile/:userId", validateRequest({ body: UpdateProfileSchema }), userController.updateUser);
 
 // ------------------
 userRegistry.registerPath({
@@ -87,7 +84,7 @@ userRegistry.registerPath({
   responses: createApiResponse(CreateProfileResponseSchema, "Profile created successfully"),
 });
 
-userRouter.post("/profile", validateRequest(CreateUserProfileSchema), userController.createUser);
+userRouter.post("/profile", validateRequest({ body: CreateUserProfileSchema }), userController.createUser);
 
 // -------------------
 userRegistry.registerPath({
@@ -96,6 +93,6 @@ userRegistry.registerPath({
   tags: ["User"],
   responses: createApiResponse(UpdatePasswordSchema, "Password changed successfully"),
 });
-userRouter.put("/profile/:userId", validateRequest(UpdatePasswordSchema), userController.changePassword);
+userRouter.put("/profile/:userId", validateRequest({ body: UpdatePasswordSchema }), userController.changePassword);
 
 userRouter.post("/upload", userController.uploadPicture);

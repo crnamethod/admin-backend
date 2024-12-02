@@ -1,102 +1,72 @@
-import type { User, UserProfile } from "@/api/user/userModel";
+import {
+  GetCommand,
+  PutCommand,
+  type PutCommandInput,
+  type PutCommandOutput,
+  ScanCommand,
+  UpdateCommand,
+  type UpdateCommandInput,
+} from "@aws-sdk/lib-dynamodb";
+
+import type { UserProfile } from "@/api/user/userModel";
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
+import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-import {
-  GetItemCommand,
-  PutItemCommand,
-  type PutItemCommandOutput,
-  ScanCommand,
-  UpdateItemCommand,
-} from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+import { updateDataHelper } from "@/common/utils/update";
+import type { CreateUserProfileDto } from "./dto/create-user.dto";
+import { UserEntity } from "./entity/user.entity";
 
 const TableName = env.DYNAMODB_TBL_USERPROFILE;
 
 export class UserRepository {
   async getAllUsers(): Promise<UserProfile[]> {
     const params = {
-      TableName: TableName,
+      TableName,
     };
 
     const { Items } = await dynamoClient.send(new ScanCommand(params));
-    if (Items) {
-      const users: UserProfile[] = Items.map((item) => {
-        return {
-          userId: String(item.userId.S),
-          email: String(item.email.S),
-          stripeCustomerId: item.stripeCustomerId?.S,
-          isSubscriber: item.isSubscriber.BOOL,
-          createdAt: item.createdAt?.S ? new Date(item.createdAt.S) : "",
-          updatedAt: item.updatedAt?.S ? new Date(item.updatedAt.S) : "",
-          username: item.username?.S || "",
-          firstName: item.firstName?.S || "",
-          lastName: item.lastName?.S || "",
-        };
-      });
-      return users;
-    }
+
+    if (Items && Items.length > 0) Items.map((item) => new UserEntity(item));
+
     return [];
   }
 
-  async getUser(userId: string): Promise<UserProfile | null> {
+  async findOne(userId: string, options?: GetCommandOptions): Promise<UserProfile | null> {
     const params = {
-      TableName: TableName,
-      Key: {
-        userId: { S: userId },
-      },
+      TableName,
+      Key: { userId },
+      ...options,
     };
 
-    const { Item } = await dynamoClient.send(new GetItemCommand(params));
-    return {
-      userId: Item?.userId.S,
-      email: Item?.email.S,
-      stripeCustomerId: Item?.stripeCustomerId?.S,
-      isSubscriber: Item?.isSubscriber.BOOL,
-      createdAt: Item?.createdAt?.S ? new Date(Item?.createdAt.S) : "",
-      updatedAt: Item?.updatedAt?.S ? new Date(Item?.updatedAt.S) : "",
-      username: Item?.username?.S || "",
-      firstName: Item?.firstName?.S || "",
-      lastName: Item?.lastName?.S || "",
-    } as UserProfile;
+    const { Item } = await dynamoClient.send(new GetCommand(params));
+
+    return Item ? new UserEntity(Item) : null;
   }
 
   async updateProfileAsync(userId: string, profileUpdates: Partial<UserProfile>): Promise<UserProfile> {
-    const now = new Date().toISOString();
-
     if (profileUpdates.username) {
       const usernameExists = await this.findProfileByUsernameAsync(profileUpdates.username);
+
       if (usernameExists && usernameExists.userId !== userId) {
         throw new Error("Username already exists");
       }
     }
 
-    let updateExpression = "set updatedAt = :updatedAt, ";
-    const expressionAttributeNames: any = {};
-    const expressionAttributeValues: any = {
-      ":updatedAt": { S: now },
-    };
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(profileUpdates);
 
-    for (const [key, value] of Object.entries(profileUpdates)) {
-      updateExpression += `#${key} = :${key}, `;
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = { S: value };
-    }
-
-    const params: any = {
-      TableName: TableName,
-      Key: {
-        userId: { S: userId },
-      },
-      UpdateExpression: updateExpression.slice(0, -2),
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { userId },
+      UpdateExpression: updateExpression.slice(0, -2), // ? Remove the trailing comma and space
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
     };
-    try {
-      const { Attributes }: any = await dynamoClient.send(new UpdateItemCommand(params));
 
-      const user = unmarshall(Attributes) as UserProfile;
-      return user;
+    try {
+      const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+      return Attributes as UserProfile;
     } catch (error) {
       console.error("Error updating user profile:", error);
       throw new Error("Could not update user profile");
@@ -105,98 +75,65 @@ export class UserRepository {
 
   async findProfileByUsernameAsync(username: string): Promise<UserProfile | null> {
     const params = {
-      TableName: TableName,
+      TableName,
       FilterExpression: "#username = :username",
       ExpressionAttributeNames: {
         "#username": "username",
       },
       ExpressionAttributeValues: {
-        ":username": { S: username },
+        ":username": username,
       },
     };
 
     try {
-      const { Items }: any = await dynamoClient.send(new ScanCommand(params));
+      const { Items } = await dynamoClient.send(new ScanCommand(params));
+
       if (!Items || Items.length === 0) {
         return null;
       }
 
-      const Item = Items[0];
-      return {
-        userId: Item.userId.S,
-        email: Item.email.S,
-        stripeCustomerId: Item.stripeCustomerId?.S,
-        isSubscriber: Item.isSubscriber.BOOL,
-        createdAt: new Date(Item.createdAt.S),
-        updatedAt: new Date(Item.updatedAt.S),
-        username: Item.username?.S || "",
-        firstName: Item.firstName?.S || "",
-        lastName: Item.lastName?.S || "",
-      } as UserProfile;
+      return new UserEntity(Items[0]);
     } catch (error) {
       console.error("Error fetching user profile by username:", error);
       throw new Error("Could not fetch user profile by username");
     }
   }
 
-  async createProfileAsync(profile: UserProfile): Promise<PutItemCommandOutput | UserProfile> {
-    const now = new Date();
-
-    // Check if the profile already exists
+  async createProfileAsync(profile: CreateUserProfileDto): Promise<PutCommandOutput | UserProfile> {
     const getParams = {
-      TableName: TableName,
-      Key: {
-        userId: { S: profile.userId },
-      },
+      TableName,
+      Key: { userId: profile.userId },
     };
 
     try {
-      const { Item }: any = await dynamoClient.send(new GetItemCommand(getParams));
+      const { Item } = await dynamoClient.send(new GetCommand(getParams));
 
       if (Item) {
-        console.log(Item);
         // Profile already exists, return the existing profile
-        return {
-          userId: Item.userId.S,
-          email: Item.email.S,
-          stripeCustomerId: Item.stripeCustomerId?.S,
-          isSubscriber: Item.isSubscriber.BOOL,
-          createdAt: new Date(Item.createdAt.S),
-          updatedAt: new Date(Item.updatedAt.S),
-          username: Item.username?.S || "",
-          firstName: Item.firstName?.S || "",
-          lastName: Item.lastName?.S || "",
-        } as UserProfile;
+        return new UserEntity(Item);
       } else {
-        // Profile does not exist, create a new profile
-        const putParams = {
-          TableName: TableName,
-          Item: {
-            userId: { S: profile.userId },
-            email: { S: profile.email },
-            // stripeCustomerId: { S: "" },
-            isSubscriber: { BOOL: false },
-            createdAt: { S: now.toISOString() },
-            updatedAt: { S: now.toISOString() },
-            username: { S: profile?.username || "" },
-            firstName: { S: profile?.firstName || "" },
-            lastName: { S: profile?.lastName || "" },
-          },
-        };
-        await dynamoClient.send(new PutItemCommand(putParams));
-
-        // Construct and return the profile object
-        return {
+        const Item = {
           userId: profile.userId,
           email: profile.email,
-          // stripeCustomerId: "",
+          stripeCustomerId: "",
           isSubscriber: false,
-          createdAt: now,
-          updatedAt: now,
-          username: profile?.username || "",
-          firstName: profile?.firstName || "",
-          lastName: profile?.lastName || "",
-        } as UserProfile;
+          username: "",
+          firstName: "",
+          lastName: "",
+          createdAt: nowISO(),
+          updatedAt: nowISO(),
+        };
+
+        // Profile does not exist, create a new profile
+        const putParams: PutCommandInput = {
+          TableName,
+          Item,
+        };
+
+        const { Attributes } = await dynamoClient.send(new PutCommand(putParams));
+
+        // Construct and return the profile object
+        return new UserEntity(Attributes);
       }
     } catch (error) {
       console.error("Error creating user profile:", error);
