@@ -8,17 +8,19 @@ import {
   paginateQuery,
 } from "@aws-sdk/lib-dynamodb";
 
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
-import { updateDataHelper } from "@/common/utils/update";
-
-import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { capitalize } from "@/common/utils/string";
+import { updateDataHelper } from "@/common/utils/update";
 import type { RangeFilterDto } from "@/common/validators/common.validator";
+
 import { prerequisiteRepository } from "../prerequisite/prerequisite.repository";
+import type { AssignClinicDto } from "./dto/assign-clinic.dto";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
 import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
+import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import { SchoolEntity } from "./entity/school.entity";
 
@@ -279,6 +281,36 @@ class SchoolRepository {
     const prerequisites = await prerequisiteRepository.findAllBySchool(id);
 
     return Item ? new SchoolEntity({ ...Item, prerequisites }) : null;
+  }
+
+  async assignClinic(dto: AssignClinicDto) {
+    const params = this.assignOrRemoveClinicParams(dto, "ADD");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  async removeClinic(dto: RemoveClinicDto) {
+    const params = this.assignOrRemoveClinicParams(dto, "DELETE");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  private assignOrRemoveClinicParams({ id, clinicIds }: AssignClinicDto | RemoveClinicDto, action: "ADD" | "DELETE") {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: `${action} clinicIds :clinicIds`,
+      ExpressionAttributeValues: {
+        ":clinicIds": clinicIds,
+      },
+      ReturnValues: "UPDATED_NEW",
+    };
+
+    return params;
   }
 
   private eitherOrHelper(data: string[], key: string) {

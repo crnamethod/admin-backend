@@ -1,10 +1,13 @@
-import { nowISO } from '@/common/utils/date';
-import { generateUUID } from '@/common/utils/idGenerator';
+import { nowISO } from "@/common/utils/date";
+import { generateUUID } from "@/common/utils/idGenerator";
 
-import { ClinicType } from '../clinicModel';
+import type { EntityOptions } from "@/common/types/entity.type";
+import type { ClinicType } from "../clinicModel";
 
 export class ClinicEntity implements ClinicType {
-  constructor(data: Partial<ClinicEntity>, existing: boolean = true) {
+  constructor(data: Partial<ClinicEntity>, options?: EntityOptions) {
+    const { existing = true } = options || {};
+
     Object.assign(this, data);
 
     if (!data.clinicId && !existing) {

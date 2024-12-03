@@ -1,63 +1,39 @@
 import type { Request, RequestHandler, Response } from "express";
+import expressAsyncHandler from "express-async-handler";
+
+import type { TypedRequestBody, TypedRequestQuery } from "@/common/types/request.type";
 
 import { clinicService } from "./clinicService";
-import {
-  TypedRequestBody,
-  TypedRequestQuery,
-} from "@/common/types/request.type";
-import { FindAllClinicDto } from "./dto/get-all-clinic.dto";
+import type { CreateClinicDto } from "./dto/create-clinic.dto";
+import type { FindAllClinicDto } from "./dto/get-all-clinic.dto";
+import type { UpdateClinicDto } from "./dto/update-clinic.dto";
 
 class ClinicController {
-  public getAll: RequestHandler = async (
-    req: TypedRequestQuery<FindAllClinicDto>,
-    res: Response
-  ) => {
-    console.log(req.query);
-    try {
+  public createClinic: RequestHandler = expressAsyncHandler(
+    async (req: TypedRequestBody<CreateClinicDto>, res: Response) => {
+      const data = await clinicService.createClinic(req.body);
+      res.status(data.statusCode).json(data);
+    },
+  );
+
+  public updateClinic: RequestHandler = expressAsyncHandler(
+    async (req: TypedRequestBody<UpdateClinicDto>, res: Response) => {
+      const data = await clinicService.updateClinic(req.params.id, req.body);
+      res.status(data.statusCode).json(data);
+    },
+  );
+
+  public getAll: RequestHandler = expressAsyncHandler(
+    async (req: TypedRequestQuery<FindAllClinicDto>, res: Response) => {
       const data = await clinicService.findAll(req.query);
-      res.status(200).json(data);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  };
+      res.status(data.statusCode).json(data);
+    },
+  );
 
-  public getOne: RequestHandler = async (req: Request, res: Response) => {
-    const clinicId = req.params.clinicId as string;
-    try {
-      const data = await clinicService.findOne(clinicId);
-      res.status(200).json(data);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-
-  public updateClinic: RequestHandler = async (req: Request, res: Response) => {
-    const { clinicId } = req.params;
-    const clinicUpdates = req.body;
-
-    if (!req.body || Object.keys(req.body).length === 0) {
-      return res.status(400).json({ message: "No data provided for update" });
-    }
-
-    try {
-      const data = await await clinicService.updateClinic(
-        clinicId,
-        clinicUpdates
-      );
-      res.status(200).json(data);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  };
-
-  public createClinic: RequestHandler = async (req: Request, res: Response) => {
-    try {
-      const data = await await clinicService.createClinic(req.body);
-      res.status(200).json(data);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  };
+  public getOne: RequestHandler = expressAsyncHandler(async (req: Request, res: Response) => {
+    const data = await clinicService.findOneOrThrow(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
 }
 
 export const clinicController = new ClinicController();

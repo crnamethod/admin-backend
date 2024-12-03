@@ -4,9 +4,10 @@ import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { validateRequest } from "@/common/utils/httpHandlers";
-import { ClinicSchema, CreateClinicSchema } from "./clinicModel";
 import { clinicController } from "./clinicController";
-import { FindAllClinicSchema, FindPerId } from "./dto/get-all-clinic.dto";
+import { ClinicSchema, CreateClinicSchema } from "./clinicModel";
+import { FindAllClinicSchema } from "./dto/get-all-clinic.dto";
+import { UpdateClinicSchema } from "./dto/update-clinic.dto";
 
 export const clinicRegistry = new OpenAPIRegistry();
 
@@ -22,31 +23,13 @@ clinicRegistry.registerPath({
 export const clinicRouter: Router = (() => {
   const router = express.Router();
 
-  router.get(
-    "/",
-    validateRequest(z.object({ query: FindAllClinicSchema.strip().strict() })),
-    clinicController.getAll
-  );
+  router.post("/", validateRequest({ body: CreateClinicSchema }), clinicController.createClinic);
 
-  router.get(
-    "/:clinicId",
-    validateRequest(z.object({ params: FindPerId })),
-    clinicController.getOne
-  );
+  router.patch("/:id", validateRequest({ body: UpdateClinicSchema }), clinicController.updateClinic);
 
-  router.patch(
-    "/:clinicId",
-    validateRequest(
-      z.object({ body: ClinicSchema.partial().strip().strict() })
-    ),
-    clinicController.updateClinic
-  );
+  router.get("/", validateRequest({ query: FindAllClinicSchema }), clinicController.getAll);
 
-  router.post(
-    "/",
-    validateRequest(z.object({ body: CreateClinicSchema })),
-    clinicController.createClinic
-  );
+  router.get("/:id", clinicController.getOne);
 
   return router;
 })();
