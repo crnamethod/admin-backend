@@ -1,239 +1,340 @@
-import { dynamoClient } from "@/common/utils/dynamo";
-import { env } from "@/common/utils/envConfig";
 import {
-  QueryCommand,
-  ScanCommand,
-  type ScanCommandInput,
-} from "@aws-sdk/client-dynamodb";
-import {
-  DeleteCommand,
   GetCommand,
+  type GetCommandInput,
   PutCommand,
+  type QueryCommandInput,
   UpdateCommand,
   type UpdateCommandInput,
+  paginateQuery,
 } from "@aws-sdk/lib-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
+
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
+import { dynamoClient } from "@/common/utils/dynamo";
+import { env } from "@/common/utils/envConfig";
+import { HttpException } from "@/common/utils/http-exception";
+import { capitalize } from "@/common/utils/string";
+import { updateDataHelper } from "@/common/utils/update";
+import type { RangeFilterDto } from "@/common/validators/common.validator";
+
+import { prerequisiteRepository } from "../prerequisite/prerequisite.repository";
+import type { AssignClinicDto } from "./dto/assign-clinic.dto";
+import type { CreateSchoolDto } from "./dto/create-school.dto";
+import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
+import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
-import type { School } from "./schoolModel";
+import { SchoolEntity } from "./entity/school.entity";
 
 const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
-export const listSchool = async (schoolId: string): Promise<School | null> => {
-  const params = {
-    TableName: TableName,
-    KeyConditionExpression: "#id = :id",
-    ExpressionAttributeNames: {
-      "#id": "id",
-    },
-    ExpressionAttributeValues: {
-      ":id": { S: schoolId },
-    },
-  };
+class SchoolRepository {
+  async findAllSchoolsWithPaginated(body: GetSchoolsQueryDto) {
+    const { search, sort, limit = 10, startingToken, ...filters } = body;
 
-  try {
-    const { Items } = await dynamoClient.send(new QueryCommand(params));
-    if (!Items || Items.length === 0) return null;
-
-    const schoolData = unmarshall(Items[0]) as School;
-    return schoolData;
-  } catch (error) {
-    console.error("Error fetching school by ID:", error);
-    throw new Error("Could not retrieve school information");
-  }
-};
-
-export const getSchoolByIdAndName = async (
-  id: string,
-  name: string
-): Promise<School | null> => {
-  const params = {
-    TableName,
-    Key: {
-      id,
-      name,
-    },
-  };
-
-  const { Item } = await dynamoClient.send(new GetCommand(params));
-
-  if (!Item) return null;
-
-  return Item as School;
-};
-
-export const updateSchool = async (
-  id: string,
-  name: string,
-  updates: Partial<Omit<UpdateSchoolDto, "id" | "name" | "clinicIds">>
-) => {
-  // Flatten nested objects into dot notation
-  const flattenObject = (obj: any, prefix = ""): Record<string, any> => {
-    return Object.keys(obj).reduce((acc: Record<string, any>, key: string) => {
-      const prefixKey = prefix ? `${prefix}.${key}` : key;
-      if (
-        typeof obj[key] === "object" &&
-        obj[key] !== null &&
-        !Array.isArray(obj[key])
-      ) {
-        Object.assign(acc, flattenObject(obj[key], prefixKey));
-      } else {
-        acc[prefixKey] = obj[key];
-      }
-      return acc;
-    }, {});
-  };
-
-  const flattenedUpdates = flattenObject(updates);
-
-  const updateExpressionParts: string[] = [];
-  const expressionAttributeNames: Record<string, string> = {};
-  const expressionAttributeValues: Record<string, any> = {};
-
-  Object.entries(flattenedUpdates).forEach(([key, value], index) => {
-    if (value === undefined) return;
-
-    const parts = key.split(".");
-    const attributeNames = parts.map((_, i) => `#key${index}_${i}`);
-    const attributePath = attributeNames.join(".");
-    const valueKey = `:val${index}`;
-
-    updateExpressionParts.push(`${attributePath} = ${valueKey}`);
-
-    // Set each part of the nested path in ExpressionAttributeNames
-    parts.forEach((part, i) => {
-      expressionAttributeNames[attributeNames[i]] = part;
-    });
-
-    expressionAttributeValues[valueKey] = value;
-  });
-
-  if (updateExpressionParts.length === 0) {
-    throw new Error("No valid updates provided");
-  }
-
-  const params: UpdateCommandInput = {
-    TableName,
-    Key: {
-      id,
-      name,
-    },
-    UpdateExpression: `SET ${updateExpressionParts.join(", ")}`,
-    ExpressionAttributeNames: expressionAttributeNames,
-    ExpressionAttributeValues: expressionAttributeValues,
-    ReturnValues: "ALL_NEW",
-  };
-
-  try {
-    console.log("Update params:", JSON.stringify(params, null, 2));
-    const command = new UpdateCommand(params);
-    const result = await dynamoClient.send(command);
-    return result.Attributes;
-  } catch (error: any) {
-    console.error("Update error:", error);
-    throw new Error(`Failed to update school: ${error.message}`);
-  }
-};
-
-export const listSchools = async (
-  name?: string,
-  lastSchoolId?: string,
-  limit = 10
-): Promise<{
-  schools: School[];
-  lastEvaluatedId?: string;
-  lastEvaluatedName?: string;
-}> => {
-  const params: ScanCommandInput = {
-    TableName,
-    Limit: limit,
-  };
-
-  if (lastSchoolId && name) {
-    params.ExclusiveStartKey = {
-      id: { S: lastSchoolId },
-      name: { S: name },
+    const params: QueryCommandInput = {
+      TableName,
+      Limit: limit,
+      IndexName: "NameIndex",
+      KeyConditionExpression: "#gsiKey = :gsiValue",
+      ScanIndexForward: sort === "asc", // true for ascending, false for descending
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds",
     };
-  }
 
-  try {
-    const { Items, LastEvaluatedKey } = await dynamoClient.send(
-      new ScanCommand(params)
-    );
+    const filterExpressions: string[] = ["#hide = :hide"];
 
-    if (!Items) return { schools: [] };
+    const expressionAttributeNames: { [key: string]: string } = {
+      "#hide": "hide",
+      "#gsiKey": "gsiPartitionKey",
+      "#name": "name",
+      "#state": "state",
+    };
 
-    const schools = Items.map((item) => unmarshall(item) as School);
+    const expressionAttributeValues: { [key: string]: any } = {
+      ":hide": false,
+      ":gsiValue": "ALL",
+    };
+
+    if (filters) {
+      const {
+        degree_type,
+        program_structure,
+        prerequisites,
+        application_deadline,
+        minimum_icu_experience,
+        specialty_experience,
+        minimum_gpa,
+        in_state_tuition,
+        out_state_tuition,
+        not_required,
+        nursing_cas,
+        new_program,
+        acceptance_rate,
+        other,
+        minimum_science_gpa,
+        class_size_category,
+        facilities,
+        state,
+      } = filters;
+
+      const eitherOrHelperFilter = (data: string[], field_name: string) => {
+        if (data && data.length > 0) {
+          const { attribute_values, filter_expressions } = this.eitherOrHelper(data, field_name);
+          Object.assign(expressionAttributeValues, attribute_values);
+          filterExpressions.push(...filter_expressions);
+        }
+      };
+
+      const checkBoxFilter = (arrayData: string[], value: boolean) => {
+        arrayData.forEach((data) => {
+          const key = `:${data}`;
+          filterExpressions.push(`${data.toLowerCase()} = ${key}`);
+          expressionAttributeValues[key] = value;
+        });
+      };
+
+      const rangeFilter = (field_name: string, startKey: string, endKey: string, range: RangeFilterDto) => {
+        filterExpressions.push(`${field_name} BETWEEN ${startKey} AND ${endKey}`);
+        expressionAttributeValues[startKey] = range.start;
+        expressionAttributeValues[endKey] = range.end;
+      };
+
+      // ? Checkbox filters (Either OR)
+      if (degree_type && degree_type.length > 0) eitherOrHelperFilter(degree_type, "degree_type");
+      if (program_structure && program_structure.length > 0)
+        eitherOrHelperFilter(program_structure, "program_structure");
+      if (state && state.length > 0) eitherOrHelperFilter(state, "#state");
+
+      if (prerequisites && prerequisites.length > 0) {
+        prerequisites.forEach((value: string) => {
+          const key_attr_value = `:${value}`;
+          filterExpressions.push(`NOT contains(prerequisiteIds, ${key_attr_value})`);
+          expressionAttributeValues[key_attr_value] = value;
+        });
+      }
+      if (application_deadline && application_deadline.length > 0) {
+        const deadlineExpressions = application_deadline.map((month: string, index: number) => {
+          const monthKey = `:applicationDeadline${index}`;
+          expressionAttributeValues[monthKey] = month;
+          return `contains(application_deadline, ${monthKey})`;
+        });
+        filterExpressions.push(`(${deadlineExpressions.join(" OR ")})`);
+      }
+
+      // ? Checkbox filters
+      if (specialty_experience && specialty_experience.length > 0) checkBoxFilter(specialty_experience, true);
+      if (not_required && not_required.length > 0) checkBoxFilter(not_required, false);
+      if (other && other.length > 0) checkBoxFilter(other, true);
+      if (facilities && facilities.length > 0) checkBoxFilter(facilities, true);
+
+      // ? Range filters
+      if (minimum_icu_experience) {
+        const startKey = ":min_icu";
+        const endKey = ":max_icu";
+        rangeFilter("minimum_icu_experience", startKey, endKey, minimum_icu_experience);
+      }
+      if (minimum_gpa) {
+        const startKey = ":min_minimum_gpa";
+        const endKey = ":max_minimum_gpa";
+        rangeFilter("minimum_gpa", startKey, endKey, minimum_gpa);
+      }
+      if (in_state_tuition) {
+        const startKey = ":min_in_state";
+        const endKey = ":max_in_state";
+        rangeFilter("in_state_tuition", startKey, endKey, in_state_tuition);
+      }
+      if (out_state_tuition) {
+        const startKey = ":min_out_state";
+        const endKey = ":max_out_state";
+        rangeFilter("out_state_tuition", startKey, endKey, out_state_tuition);
+      }
+      if (acceptance_rate) {
+        const startKey = ":min_acceptance_rate";
+        const endKey = ":max_acceptance_rate";
+        rangeFilter("acceptance_rate", startKey, endKey, acceptance_rate);
+      }
+      if (minimum_science_gpa) {
+        const startKey = ":min_minimum_science_gpa";
+        const endKey = ":max_minimum_science_gpa";
+        rangeFilter("minimum_science_gpa", startKey, endKey, minimum_science_gpa);
+      }
+
+      // ? Toggle filters (Boolean)
+      if (nursing_cas !== undefined) {
+        filterExpressions.push("nursing_cas = :nursing_cas");
+        expressionAttributeValues[":nursing_cas"] = nursing_cas;
+      }
+      if (new_program !== undefined) {
+        filterExpressions.push("new_program = :new_program");
+        expressionAttributeValues[":new_program"] = new_program;
+      }
+
+      if (class_size_category) {
+        filterExpressions.push("class_size_category = :class_size_category");
+        expressionAttributeValues[":class_size_category"] = capitalize(class_size_category);
+      }
+
+      // * Add more conditions here if there are more filters
+    }
+
+    // ? Add search to params
+    if (search) {
+      const searchWords = search.split(/\s+/);
+      if (searchWords.length > 0) {
+        searchWords.forEach((word: string, index: number) => {
+          const searchExpression = `contains(#search, :search${index})`;
+          filterExpressions.push(searchExpression);
+          expressionAttributeNames["#search"] = "search";
+          expressionAttributeValues[`:search${index}`] = word;
+        });
+      }
+    }
+
+    if (filterExpressions.length > 0) {
+      params.FilterExpression = filterExpressions.join(" AND ");
+    }
+    if (Object.keys(expressionAttributeNames).length > 0) {
+      params.ExpressionAttributeNames = expressionAttributeNames;
+    }
+    if (Object.keys(expressionAttributeValues).length > 0) {
+      params.ExpressionAttributeValues = expressionAttributeValues;
+    }
+
+    // console.log('Query Command Params: ', JSON.stringify(params, null, 2));
+
+    // ? Use paginateQuery to handle pagination
+    const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);
+
+    const accumulatedItems: any[] = [];
+    let lastEvaluatedKey: any;
+
+    for await (const page of paginator) {
+      const remainingLimit = limit - accumulatedItems.length;
+      accumulatedItems.push(...page.Items!.slice(0, remainingLimit));
+
+      // ? If the accumulated items length is exactly the same with the limit
+      if (remainingLimit % limit === 0 && accumulatedItems.length >= limit) {
+        lastEvaluatedKey = page.LastEvaluatedKey;
+        break;
+      } else if (accumulatedItems.length >= limit) {
+        break;
+      }
+
+      // ? Reassign the value for the last evaluated key if there's still remaining items to be pushed
+      lastEvaluatedKey = page.LastEvaluatedKey;
+    }
+
+    const schools = accumulatedItems.map((item) => new SchoolEntity(item));
 
     return {
-      schools,
-      lastEvaluatedId: LastEvaluatedKey?.id?.S,
-      lastEvaluatedName: LastEvaluatedKey?.name?.S,
+      lastEvaluatedKey,
+      total: schools.length,
+      data: schools,
     };
-  } catch (error) {
-    console.error("Error scanning schools:", error);
-    throw new Error("Could not retrieve schools information");
   }
-};
 
-export const createSchool = async (school: School) => {
-  const params = {
-    TableName,
-    Item: school,
-    ConditionExpression:
-      "attribute_not_exists(id) AND attribute_not_exists(#name)",
-    ExpressionAttributeNames: {
-      "#name": "name",
-    },
-  };
+  async create(dto: CreateSchoolDto) {
+    const newSchoolEntity = new SchoolEntity(dto, { existing: false });
 
-  try {
-    const command = new PutCommand(params);
-    const data = await dynamoClient.send(command);
-    return data;
-  } catch (error: any) {
-    console.error("Create error:", error);
-    throw new Error(`Failed to create school: ${error.message}`);
+    const params = {
+      TableName,
+      Item: newSchoolEntity,
+    };
+
+    await dynamoClient.send(new PutCommand(params));
+
+    return newSchoolEntity;
   }
-};
 
-export const checkDuplicate = async (id: string, name: string) => {
-  const params = {
-    TableName: TableName,
-    KeyConditionExpression: "#id = :id",
-    ExpressionAttributeNames: {
-      "#id": "id",
-    },
-    ExpressionAttributeValues: {
-      ":id": { S: id },
-    },
-  };
+  // TODO: pros & cons properties
+  async update(id: string, updateDto: UpdateSchoolDto) {
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
 
-  try {
-    const { Items } = await dynamoClient.send(new QueryCommand(params));
-    if (!Items || Items.length === 0) return null;
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
 
-    const schools = Items.map((item) => unmarshall(item) as School);
-    return schools;
-  } catch (error) {
-    console.error("Error fetching school by ID:", error);
-    throw new Error("Could not retrieve school information");
+    try {
+      // console.log('Update params:', JSON.stringify(params, null, 2)); // Log params for debugging
+
+      const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+      return new SchoolEntity(Attributes!);
+    } catch (error: any) {
+      console.error("Update error:", error);
+      throw new HttpException(`Failed to update school with id ${id}: ${error.message}`, 400);
+    }
   }
-};
 
-export const deleteSchool = async (id: string, name: string) => {
-  const params = {
-    TableName,
-    Key: {
-      id,
-      name,
-    },
-  };
+  async findOne(id: string, options?: GetCommandOptions) {
+    const params: GetCommandInput = {
+      TableName,
+      Key: { id },
+      ...options,
+    };
 
-  try {
-    await dynamoClient.send(new DeleteCommand(params));
-    console.log(`Item with id=${id} and name=${name} deleted successfully.`);
-  } catch (error) {
-    console.error("Error deleting item:", error);
-    throw new Error("Could not delete item");
+    const { Item } = await dynamoClient.send(new GetCommand(params));
+
+    const prerequisites = await prerequisiteRepository.findAllBySchool(id);
+
+    return Item ? new SchoolEntity({ ...Item, prerequisites }) : null;
   }
-};
+
+  async assignClinic(dto: AssignClinicDto) {
+    const params = this.assignOrRemoveClinicParams(dto, "ADD");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  async removeClinic(dto: RemoveClinicDto) {
+    const params = this.assignOrRemoveClinicParams(dto, "DELETE");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  private assignOrRemoveClinicParams({ id, clinicIds }: AssignClinicDto | RemoveClinicDto, action: "ADD" | "DELETE") {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: `${action} clinicIds :clinicIds`,
+      ExpressionAttributeValues: {
+        ":clinicIds": clinicIds,
+      },
+      ReturnValues: "UPDATED_NEW",
+    };
+
+    return params;
+  }
+
+  private eitherOrHelper(data: string[], key: string) {
+    const dataExpressions: string[] = [];
+    const attribute_values: any = {};
+    const filter_expressions: string[] = [];
+
+    data.forEach((val) => {
+      let value = `:${val.replace(/\s+/g, "_")}`;
+
+      if (key === "#state") {
+        value = `:${val.split(" ").join("").replace("-", "")}`; // * e.g.: "FL - Florida" -> "FLFlorida"
+      }
+
+      dataExpressions.push(`${key} = ${value}`);
+      attribute_values[value] = val;
+    });
+
+    if (dataExpressions.length > 0) {
+      filter_expressions.push(`(${dataExpressions.join(" OR ")})`);
+    }
+
+    return { attribute_values, filter_expressions };
+  }
+}
+
+export const schoolRepository = new SchoolRepository();

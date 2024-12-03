@@ -3,38 +3,20 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { UploadImageSchema } from "@/common/dto/upload-image.dto";
 import { validateRequest } from "@/common/utils/httpHandlers";
+
+import { CreateSchoolSchema } from "./dto/create-school.dto";
+import { GetSchoolsQuerySchema } from "./dto/filter-school.dto";
 import { UpdateSchoolSchema } from "./dto/update-school.dto";
+import { SchoolImageBodySchema } from "./dto/upload-image.dto";
+import { SchoolSchema } from "./school.model";
 import { schoolController } from "./schoolController";
-import { SchoolSchema } from "./schoolModel";
 
 export const schoolRegistry = new OpenAPIRegistry();
 export const schoolRouter: Router = express.Router();
 
 schoolRegistry.register("School", SchoolSchema);
-
-const GetSchoolsQuerySchema = z.object({
-  query: z
-    .object({
-      limit: z
-        .string()
-        .optional()
-        .refine((val) => !val || !Number.isNaN(Number(val)), {
-          message: "Limit must be a valid number.",
-        })
-        .transform((val) => (val ? Number.parseInt(val, 10) : undefined)),
-      id: z.string().optional(),
-      name: z.string().optional(),
-    })
-    .refine((data) => !data.id || (data.id && data.name), {
-      message: "'name' is required when 'id' is provided.",
-      path: ["name"],
-    })
-    .refine((data) => !data.name || (data.name && data.id), {
-      message: "'id' is required when 'name' is provided.",
-      path: ["id"],
-    }),
-});
 
 schoolRegistry.registerPath({
   method: "get",
@@ -43,21 +25,21 @@ schoolRegistry.registerPath({
   responses: createApiResponse(z.array(SchoolSchema), "Success"),
 });
 
-schoolRouter.get("/", validateRequest(GetSchoolsQuerySchema), schoolController.getShools);
+schoolRouter.get("/", validateRequest({ query: GetSchoolsQuerySchema }), schoolController.getShools);
 
 const GetSchoolSchema = z.object({
-  params: z.object({ id: z.string() }),
+  id: z.string(),
 });
 
 schoolRegistry.registerPath({
   method: "get",
   path: "/school/{id}",
   tags: ["School"],
-  request: { params: GetSchoolSchema.shape.params },
+  request: { params: GetSchoolSchema },
   responses: createApiResponse(SchoolSchema, "Success"),
 });
 
-schoolRouter.get("/:id", validateRequest(GetSchoolSchema), schoolController.getShool);
+schoolRouter.get("/:id", validateRequest({ params: GetSchoolSchema }), schoolController.getShool);
 
 schoolRegistry.registerPath({
   method: "patch",
@@ -75,7 +57,7 @@ schoolRegistry.registerPath({
   responses: createApiResponse(z.array(SchoolSchema), "Schools updated successfully"),
 });
 
-schoolRouter.patch("/update", validateRequest(z.object({ body: UpdateSchoolSchema })), schoolController.updateShool);
+schoolRouter.patch("/update", validateRequest({ body: UpdateSchoolSchema }), schoolController.updateShool);
 
 schoolRegistry.registerPath({
   method: "post",
@@ -94,10 +76,10 @@ schoolRegistry.registerPath({
   responses: createApiResponse(SchoolSchema, "School added successfully"),
 });
 
-schoolRouter.post("/", validateRequest(z.object({ body: SchoolSchema })), schoolController.addSchool);
+schoolRouter.post("/", validateRequest({ body: CreateSchoolSchema }), schoolController.addSchool);
 
 schoolRouter.post(
   "/upload",
-  // validateRequest(z.object({ body: UpdateSchoolSchema })),
+  validateRequest({ body: SchoolImageBodySchema, files: { schema: UploadImageSchema, fileName: "file" } }),
   schoolController.uploadPicture,
 );

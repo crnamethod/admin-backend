@@ -1,18 +1,18 @@
 import cors from "cors";
 import express, { type Express } from "express";
+import fileUpload from "express-fileupload";
 import helmet from "helmet";
 import { pino } from "pino";
 
 import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { userRouter } from "@/api/user/userRouter";
-import errorHandler from "@/common/middleware/errorHandler";
+import { globalExceptionHandler } from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
-import { env } from "@/common/utils/envConfig";
+import { clinicRouter } from "./api/clinic/clinicRouter";
 import { reviewRouter } from "./api/review/reviewRouter";
 import { schoolRouter } from "./api/school/schoolRouter";
-import { clinicRouter } from "./api/clinic/clinicRouter";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -26,6 +26,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: "*", credentials: true }));
 app.use(helmet());
 app.use(rateLimiter);
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+    limits: { fileSize: 10 * 1024 * 1024 },
+  }),
+);
 
 // Request logging
 app.use(requestLogger);
@@ -41,6 +48,6 @@ app.use("/api/clinic", clinicRouter);
 app.use(openAPIRouter);
 
 // Error handlers
-app.use(errorHandler());
+app.use(globalExceptionHandler);
 
 export { app, logger };

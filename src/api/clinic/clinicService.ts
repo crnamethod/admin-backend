@@ -1,49 +1,52 @@
-import { ServiceResponse } from "@/common/models/serviceResponse";
-import { ClinicType } from "./clinicModel";
-import { clinicRepository } from "./clinicRepository";
-import { CreateClinicDto } from "./dto/create-clinic.dto";
 import { StatusCodes } from "http-status-codes";
 
-interface GetReviewsQuery {
-  limit?: number; // Optional number
-  clinicId?: string; // Optional string
-}
+import { ServiceResponse } from "@/common/models/serviceResponse";
+import { HttpException } from "@/common/utils/http-exception";
 
-export const clinicService = {
-  findAll: async (query: GetReviewsQuery) => {
-    const { limit, clinicId: lastClinicId } = query;
-    const parsedLimit = limit ? Number(limit) : undefined;
+import { clinicRepository } from "./clinicRepository";
+import type { CreateClinicDto } from "./dto/create-clinic.dto";
+import type { FindAllClinicDto } from "./dto/get-all-clinic.dto";
+import type { UpdateClinicDto } from "./dto/update-clinic.dto";
 
-    return await clinicRepository.findAll(lastClinicId, parsedLimit);
-  },
-  findOne: async (clinicId: string) => {
-    return await clinicRepository.findOne(clinicId);
-  },
-  updateClinic: async (
-    clinicId: string,
-    clinicUpdates: Partial<ClinicType>
-  ) => {
-    return await clinicRepository.updateClinic(clinicId, clinicUpdates);
-  },
-  createClinic: async (createDto: CreateClinicDto) => {
-    const foundClinic = await clinicRepository.findByNameAndAddress(
-      createDto.name,
-      createDto.address
-    );
-    console.log(foundClinic);
+class ClinicService {
+  async createClinic(createDto: CreateClinicDto) {
+    const foundClinic = await clinicRepository.findByNameAndAddress(createDto.name, createDto.address);
+
     if (foundClinic)
       return ServiceResponse.failure(
         "Clinic with the same name and address already exists",
         null,
-        StatusCodes.BAD_REQUEST
+        StatusCodes.BAD_REQUEST,
       );
 
     const newClinic = await clinicRepository.create(createDto);
 
-    return ServiceResponse.success(
-      "Clinic created successfully",
-      newClinic,
-      StatusCodes.OK
-    );
-  },
-};
+    return ServiceResponse.success("Clinic created successfully", newClinic, StatusCodes.CREATED);
+  }
+
+  async updateClinic(id: string, updateDto: UpdateClinicDto) {
+    const updatedClinic = await clinicRepository.update(id, updateDto);
+    return ServiceResponse.success("Clinic updated successfully", updatedClinic, StatusCodes.OK);
+  }
+
+  async findAll(query: FindAllClinicDto) {
+    const clinics = await clinicRepository.findAll(query);
+    return ServiceResponse.success("Clinic updated successfully", clinics, StatusCodes.OK);
+  }
+
+  async findOne(clinicId: string) {
+    const clinic = await clinicRepository.findOne(clinicId);
+
+    return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
+  }
+
+  async findOneOrThrow(clinicId: string) {
+    const clinic = await clinicRepository.findOne(clinicId);
+
+    if (!clinic) throw new HttpException("Clinic not found", 404);
+
+    return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
+  }
+}
+
+export const clinicService = new ClinicService();

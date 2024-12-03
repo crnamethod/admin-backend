@@ -6,8 +6,6 @@ name: Node.js CI STAGING
 on:
   push:
     branches: [ "develop" ]
-  pull_request:
-    branches: [ "develop" ]
 
 jobs:
   build:
