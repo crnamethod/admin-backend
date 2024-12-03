@@ -1,9 +1,10 @@
 import type { ConnectedToEnum } from "@/common/enum/connectedTo.enum";
 
+import type { EntityOptions } from "@/common/types/entity.type";
 import type { ReviewDto } from "../reviewModel";
 
 export class ReviewEntity implements ReviewDto {
-  constructor(data: Partial<ReviewEntity>) {
+  constructor(data: Partial<ReviewEntity>, options?: EntityOptions) {
     Object.assign(this, data);
   }
 

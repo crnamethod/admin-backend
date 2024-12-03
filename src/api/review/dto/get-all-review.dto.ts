@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export type FindAllReviewDto = z.infer<typeof FindAllReviewSchema>;
+
 export const FindAllReviewSchema = z.object({
   limit: z.coerce.number().optional(),
   startingToken: z
@@ -7,5 +9,3 @@ export const FindAllReviewSchema = z.object({
     .transform((val) => JSON.parse(val))
     .optional(),
 });
-
-export type FindAllReviewDto = z.infer<typeof FindAllReviewSchema>;
