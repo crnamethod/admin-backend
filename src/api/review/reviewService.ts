@@ -1,30 +1,36 @@
-import { Review } from "./reviewModel";
-import { ReviewPerSchool, listReview, listReviews } from "./reviewRepository";
+import { StatusCodes } from "http-status-codes";
 
-interface GetReviewsQuery {
-  limit?: number; // Optional number
-  reviewId?: string; // Optional string
+import { ServiceResponse } from "@/common/models/serviceResponse";
+import { HttpException } from "@/common/utils/http-exception";
+
+import type { FindAllReviewDto } from "./dto/get-all-review.dto";
+import { reviewRepository } from "./reviewRepository";
+
+class ReviewService {
+  async getReviews(query: FindAllReviewDto) {
+    const reviews = await reviewRepository.findAll(query);
+
+    return ServiceResponse.success("Reviews fetched successfully", reviews, StatusCodes.OK);
+  }
+
+  async findOne(reviewId: string) {
+    const review = await reviewRepository.findOne(reviewId);
+    return ServiceResponse.success("Review fetched successfully", review, StatusCodes.OK);
+  }
+
+  async findOneOrThrow(reviewId: string) {
+    const review = await reviewRepository.findOne(reviewId);
+
+    if (!review) throw new HttpException("Review not found", 404);
+
+    return ServiceResponse.success("Review fetched successfully", review, StatusCodes.OK);
+  }
+
+  async getReviewsBySchool(schoolId: string) {
+    const reviews = await reviewRepository.findReviewsBySchoolIdAsync(schoolId);
+
+    return ServiceResponse.success("Reviews by School fetched successfully", reviews, StatusCodes.OK);
+  }
 }
 
-export const getReviews = async (query: GetReviewsQuery) => {
-  const { limit, reviewId: lastReviewId } = query;
-  const parsedLimit = limit ? Number(limit) : undefined;
-
-  const { reviews, lastEvaluatedKey } = await listReviews(
-    lastReviewId,
-    parsedLimit
-  );
-
-  return { reviews, lastEvaluatedKey };
-};
-
-export const getReview = async (reviewId: string) => {
-  const review = await listReview(reviewId);
-
-  return review;
-};
-export const getReviewPerSchool = async (schoolId: string) => {
-  const review = await ReviewPerSchool(schoolId);
-
-  return review;
-};
+export const reviewService = new ReviewService();

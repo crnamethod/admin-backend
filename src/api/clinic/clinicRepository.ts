@@ -13,9 +13,9 @@ import {
 
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-
 import { HttpException } from "@/common/utils/http-exception";
 import { updateDataHelper } from "@/common/utils/update";
+
 import type { CreateClinicDto } from "./dto/create-clinic.dto";
 import type { FindAllClinicDto } from "./dto/get-all-clinic.dto";
 import type { UpdateClinicDto } from "./dto/update-clinic.dto";
@@ -77,7 +77,6 @@ class ClinicRepository {
 
     for await (const page of paginator) {
       accumulatedItems.push(...page.Items!);
-      console.log(accumulatedItems.length);
       lastEvaluatedKey = page.LastEvaluatedKey;
 
       if (accumulatedItems.length >= limit) break;
