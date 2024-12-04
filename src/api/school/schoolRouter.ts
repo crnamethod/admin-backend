@@ -6,8 +6,11 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { UploadImageSchema } from "@/common/dto/upload-image.dto";
 import { validateRequest } from "@/common/utils/httpHandlers";
 
+import { AssignClinicSchema } from "./dto/assign-clinic.dto";
 import { CreateSchoolSchema } from "./dto/create-school.dto";
 import { GetSchoolsQuerySchema } from "./dto/filter-school.dto";
+import { RemoveClinicSchema } from "./dto/remove-clinic.dto";
+import { RemovePrerequisiteSchema } from "./dto/remove-prerequisite.dto";
 import { UpdateSchoolSchema } from "./dto/update-school.dto";
 import { SchoolImageBodySchema } from "./dto/upload-image.dto";
 import { SchoolSchema } from "./school.model";
@@ -77,6 +80,15 @@ schoolRegistry.registerPath({
 });
 
 schoolRouter.post("/", validateRequest({ body: CreateSchoolSchema }), schoolController.addSchool);
+
+schoolRouter.post("/assign-clinic", validateRequest({ body: AssignClinicSchema }), schoolController.assignClinic);
+schoolRouter.post("/remove-clinic", validateRequest({ body: RemoveClinicSchema }), schoolController.removeClinic);
+
+schoolRouter.post(
+  "/remove-prerequisite",
+  validateRequest({ body: RemovePrerequisiteSchema }),
+  schoolController.removePrerequisite,
+);
 
 schoolRouter.post(
   "/upload",

@@ -16,11 +16,15 @@ import { capitalize } from "@/common/utils/string";
 import { updateDataHelper } from "@/common/utils/update";
 import type { RangeFilterDto } from "@/common/validators/common.validator";
 
-import { prerequisiteRepository } from "../prerequisite/prerequisite.repository";
+import { PrerequisiteSchoolEntity } from "../prerequisite/entities/prerequisite-school.entity";
+import { prerequisiteSchoolRepository } from "../prerequisite/repositories/prerequisite-school.repository";
+import { prerequisiteRepository } from "../prerequisite/repositories/prerequisite.repository";
 import type { AssignClinicDto } from "./dto/assign-clinic.dto";
+import type { AssignPrerequisiteDto } from "./dto/assign-prerequisite.dto";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
 import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
 import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
+import type { RemovePrerequisiteDto } from "./dto/remove-prerequisite.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import { SchoolEntity } from "./entity/school.entity";
 
@@ -36,7 +40,8 @@ class SchoolRepository {
       IndexName: "NameIndex",
       KeyConditionExpression: "#gsiKey = :gsiValue",
       ScanIndexForward: sort === "asc", // true for ascending, false for descending
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds",
+      ProjectionExpression:
+        "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
     };
 
     const filterExpressions: string[] = ["#hide = :hide"];
@@ -278,7 +283,16 @@ class SchoolRepository {
 
     const { Item } = await dynamoClient.send(new GetCommand(params));
 
-    const prerequisites = await prerequisiteRepository.findAllBySchool(id);
+    const prerequisitesSchool = await prerequisiteSchoolRepository.findAllBySchool(id);
+    const prerequisitesEntities = await prerequisiteRepository.findAllByIds(
+      prerequisitesSchool.map((ps) => ps.prerequisiteId),
+      { ProjectionExpression: "prerequisiteId, label" },
+    );
+
+    const prerequisites = prerequisitesSchool.map((ps) => {
+      const foundPrerequisite = prerequisitesEntities.find((p) => p.prerequisiteId === ps.prerequisiteId);
+      return new PrerequisiteSchoolEntity({ ...ps, label: foundPrerequisite!.label });
+    });
 
     return Item ? new SchoolEntity({ ...Item, prerequisites }) : null;
   }
@@ -299,6 +313,27 @@ class SchoolRepository {
     return new SchoolEntity(Attributes!);
   }
 
+  async assignPrerequisite(dto: AssignPrerequisiteDto) {
+    const params = this.assignOrRemovePrerequisiteParams(dto, "ADD");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  async removePrerequisite(dto: RemovePrerequisiteDto) {
+    const { id, prerequisites } = dto;
+
+    // * Remove from SCHOOLS's prerequisiteIds field by NAME
+    const prerequisiteIds = new Set(prerequisites.map((p) => p.name));
+
+    const params = this.assignOrRemovePrerequisiteParams({ id, prerequisiteIds }, "DELETE");
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
   private assignOrRemoveClinicParams({ id, clinicIds }: AssignClinicDto | RemoveClinicDto, action: "ADD" | "DELETE") {
     const params: UpdateCommandInput = {
       TableName,
@@ -306,6 +341,20 @@ class SchoolRepository {
       UpdateExpression: `${action} clinicIds :clinicIds`,
       ExpressionAttributeValues: {
         ":clinicIds": clinicIds,
+      },
+      ReturnValues: "UPDATED_NEW",
+    };
+
+    return params;
+  }
+
+  private assignOrRemovePrerequisiteParams({ id, prerequisiteIds }: AssignPrerequisiteDto, action: "ADD" | "DELETE") {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: `${action} prerequisiteIds :prerequisiteIds`,
+      ExpressionAttributeValues: {
+        ":prerequisiteIds": prerequisiteIds,
       },
       ReturnValues: "UPDATED_NEW",
     };
