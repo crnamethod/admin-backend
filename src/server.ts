@@ -11,6 +11,8 @@ import { globalExceptionHandler } from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { clinicRouter } from "./api/clinic/clinicRouter";
+import { prerequisiteSchoolRouter } from "./api/prerequisite/prerequisite-school.router";
+import { prerequisiteRouter } from "./api/prerequisite/prerequisite.router";
 import { reviewRouter } from "./api/review/reviewRouter";
 import { schoolRouter } from "./api/school/schoolRouter";
 
@@ -43,6 +45,8 @@ app.use("/api/user", userRouter);
 app.use("/api/school", schoolRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/clinic", clinicRouter);
+app.use("/api/prerequisite", prerequisiteRouter);
+app.use("/api/prerequisite-school", prerequisiteSchoolRouter);
 
 // Swagger UI
 app.use(openAPIRouter);
