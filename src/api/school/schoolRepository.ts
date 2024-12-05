@@ -40,8 +40,7 @@ class SchoolRepository {
       IndexName: "NameIndex",
       KeyConditionExpression: "#gsiKey = :gsiValue",
       ScanIndexForward: sort === "asc", // true for ascending, false for descending
-      ProjectionExpression:
-        "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
     };
 
     const filterExpressions: string[] = ["#hide = :hide"];
@@ -104,8 +103,7 @@ class SchoolRepository {
 
       // ? Checkbox filters (Either OR)
       if (degree_type && degree_type.length > 0) eitherOrHelperFilter(degree_type, "degree_type");
-      if (program_structure && program_structure.length > 0)
-        eitherOrHelperFilter(program_structure, "program_structure");
+      if (program_structure && program_structure.length > 0) eitherOrHelperFilter(program_structure, "program_structure");
       if (state && state.length > 0) eitherOrHelperFilter(state, "#state");
 
       if (prerequisites && prerequisites.length > 0) {
