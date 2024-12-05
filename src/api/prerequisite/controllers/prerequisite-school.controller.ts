@@ -8,12 +8,10 @@ import type { FindPrerequisiteBySchoolDto, FindPrerequisiteSchoolDto } from "../
 import { prerequisiteSchoolService } from "../services/prerequisite-school.service";
 
 class PrerequisiteSchoolController {
-  public create: RequestHandler = expressAsyncHandler(
-    async (req: TypedRequestBody<CreatePrerequisiteSchoolDto>, res) => {
-      const data = await prerequisiteSchoolService.create(req.body);
-      res.status(201).json(data);
-    },
-  );
+  public create: RequestHandler = expressAsyncHandler(async (req: TypedRequestBody<CreatePrerequisiteSchoolDto>, res) => {
+    const data = await prerequisiteSchoolService.create(req.body);
+    res.status(201).json(data);
+  });
 
   public findAll = expressAsyncHandler(async (req, res) => {
     const data = await prerequisiteSchoolService.findAll();

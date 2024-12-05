@@ -8,19 +8,7 @@ import { FindPrerequisiteBySchoolSchema, FindPrerequisiteSchoolSchema } from "./
 
 export const prerequisiteSchoolRouter: Router = Router();
 
-prerequisiteSchoolRouter.post(
-  "/",
-  validateRequest({ body: CreatePrerequisiteSchoolSchema }),
-  prerequisiteSchoolController.create,
-);
-prerequisiteSchoolRouter.get(
-  "/",
-  validateRequest({ query: FindPrerequisiteBySchoolSchema }),
-  prerequisiteSchoolController.findAllBySchool,
-);
+prerequisiteSchoolRouter.post("/", validateRequest({ body: CreatePrerequisiteSchoolSchema }), prerequisiteSchoolController.create);
+prerequisiteSchoolRouter.get("/", validateRequest({ query: FindPrerequisiteBySchoolSchema }), prerequisiteSchoolController.findAllBySchool);
 prerequisiteSchoolRouter.get("/all", prerequisiteSchoolController.findAll);
-prerequisiteSchoolRouter.get(
-  "/one",
-  validateRequest({ query: FindPrerequisiteSchoolSchema }),
-  prerequisiteSchoolController.findOne,
-);
+prerequisiteSchoolRouter.get("/one", validateRequest({ query: FindPrerequisiteSchoolSchema }), prerequisiteSchoolController.findOne);

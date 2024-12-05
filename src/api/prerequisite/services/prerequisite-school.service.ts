@@ -19,11 +19,7 @@ class PrerequisiteSchoolService {
     // ? Assign new Prerequisite Schools to School
     await schoolService.assignPrerequisite({ id: schoolId, prerequisiteIds: prerequisiteNames });
 
-    return ServiceResponse.success(
-      "Prerequisite School created successfully",
-      newPrerequisiteSchools,
-      StatusCodes.CREATED,
-    );
+    return ServiceResponse.success("Prerequisite School created successfully", newPrerequisiteSchools, StatusCodes.CREATED);
   }
 
   async findAll() {
