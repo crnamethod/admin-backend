@@ -35,8 +35,7 @@ class SchoolService {
   }
 
   async findOne(id: string, options?: GetCommandOptions) {
-    const school = await schoolRepository.findOne(id, options);
-    return school ?? null;
+    return await schoolRepository.findOne(id, options);
   }
 
   async findOneOrThrow(id: string, options?: GetCommandOptions) {

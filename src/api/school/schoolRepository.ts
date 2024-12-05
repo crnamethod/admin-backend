@@ -249,7 +249,6 @@ class SchoolRepository {
     return newSchoolEntity;
   }
 
-  // TODO: pros & cons properties
   async update(id: string, updateDto: UpdateSchoolDto) {
     const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
 
@@ -263,7 +262,7 @@ class SchoolRepository {
     };
 
     try {
-      // console.log('Update params:', JSON.stringify(params, null, 2)); // Log params for debugging
+      // console.log("Update params:", JSON.stringify(params, null, 2)); // Log params for debugging
 
       const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
 
