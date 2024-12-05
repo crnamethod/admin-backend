@@ -76,6 +76,8 @@ class PrerequisiteRepository {
   }
 
   async findAllByIds(prerequisiteIds: string[], options?: BatchGetCommandOptions) {
+    if (prerequisiteIds.length === 0) return [];
+
     const Keys = prerequisiteIds.map((prerequisiteId) => ({ prerequisiteId }));
     const { ProjectionExpression, ExpressionAttributeNames } = options || {};
 
