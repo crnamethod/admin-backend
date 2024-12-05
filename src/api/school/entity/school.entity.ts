@@ -191,8 +191,8 @@ export class SchoolEntity implements SchoolDto {
   flexibility_for_learning_disabilities!: string | null;
   support_for_underrepresented_minorities!: boolean;
 
-  pros!: string[];
-  cons!: string[];
+  pros!: string[] | null;
+  cons!: string[] | null;
   clinicIds!: string[] | null;
   prerequisiteIds!: string[] | null;
 
