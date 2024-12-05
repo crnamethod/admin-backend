@@ -6,6 +6,7 @@ import { HttpException } from "@/common/utils/http-exception";
 import { schoolService } from "@/api/school/schoolService";
 import type { CreatePrerequisiteSchoolDto } from "../dto/create-prerequisite-school.dto";
 import type { FindPrerequisiteSchoolDto } from "../dto/get-prerequisite-school.dto";
+import type { UpdatePrerequisiteSchoolDto } from "../dto/update-prerequisite-school.dto";
 import { prerequisiteSchoolRepository } from "../repositories/prerequisite-school.repository";
 
 class PrerequisiteSchoolService {
@@ -20,6 +21,12 @@ class PrerequisiteSchoolService {
     await schoolService.assignPrerequisite({ id: schoolId, prerequisiteIds: prerequisiteNames });
 
     return ServiceResponse.success("Prerequisite School created successfully", newPrerequisiteSchools, StatusCodes.CREATED);
+  }
+
+  async update(queryDto: FindPrerequisiteSchoolDto, updateDto: UpdatePrerequisiteSchoolDto) {
+    const updatedData = await prerequisiteSchoolRepository.update(queryDto, updateDto);
+
+    return ServiceResponse.success("Prerequisite School updated successfully", updatedData, StatusCodes.OK);
   }
 
   async findAll() {

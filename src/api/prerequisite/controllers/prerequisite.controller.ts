@@ -4,11 +4,18 @@ import expressAsyncHandler from "express-async-handler";
 import type { TypedRequestBody } from "@/common/types/request.type";
 
 import type { CreatePrerequisiteDto } from "../dto/create-prerequisite.dto";
+import type { UpdatePrerequisiteDto } from "../dto/update-prerequisite.dto";
 import { prerequisiteService } from "../services/prerequisite.service";
 
 class PrerequisiteController {
   public create: RequestHandler = expressAsyncHandler(async (req: TypedRequestBody<CreatePrerequisiteDto>, res) => {
     const data = await prerequisiteService.create(req.body);
+
+    res.status(data.statusCode).json(data);
+  });
+
+  public update: RequestHandler = expressAsyncHandler(async (req: TypedRequestBody<UpdatePrerequisiteDto>, res) => {
+    const data = await prerequisiteService.update(req.params.id, req.body);
 
     res.status(data.statusCode).json(data);
   });

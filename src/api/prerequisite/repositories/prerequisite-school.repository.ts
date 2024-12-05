@@ -7,13 +7,18 @@ import {
   type QueryCommandInput,
   ScanCommand,
   type ScanCommandInput,
+  UpdateCommand,
+  type UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
+import { updateDataHelper } from "@/common/utils/update";
 
 import type { CreatePrerequisiteSchoolDto } from "../dto/create-prerequisite-school.dto";
+import type { FindPrerequisiteSchoolDto } from "../dto/get-prerequisite-school.dto";
+import type { UpdatePrerequisiteSchoolDto } from "../dto/update-prerequisite-school.dto";
 import { PrerequisiteSchoolEntity } from "../entities/prerequisite-school.entity";
 
 const TableName = env.DYNAMODB_TBL_PREREQUISITE_SCHOOLS;
@@ -44,6 +49,23 @@ class PrerequisiteSchoolRepository {
     await dynamoClient.send(new BatchWriteCommand(params));
 
     return prerequisiteSchoolEntities;
+  }
+
+  async update(Key: FindPrerequisiteSchoolDto, updateDto: UpdatePrerequisiteSchoolDto) {
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
+
+    const params: UpdateCommandInput = {
+      TableName,
+      Key,
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new PrerequisiteSchoolEntity(Attributes!);
   }
 
   async findAllBySchool(schoolId: string) {

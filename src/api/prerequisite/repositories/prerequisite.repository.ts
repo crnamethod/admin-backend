@@ -9,13 +9,17 @@ import {
   type QueryCommandInput,
   ScanCommand,
   type ScanCommandInput,
+  UpdateCommand,
+  type UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 
 import type { BatchGetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
+import { updateDataHelper } from "@/common/utils/update";
 
 import type { CreatePrerequisiteDto } from "../dto/create-prerequisite.dto";
+import type { UpdatePrerequisiteDto } from "../dto/update-prerequisite.dto";
 import { PrerequisiteEntity } from "../entities/prerequisite.entity";
 
 const TableName = env.DYNAMODB_TBL_PREREQUISITES;
@@ -32,6 +36,23 @@ class PrerequisiteRepository {
     await dynamoClient.send(new PutCommand(params));
 
     return newPrerequisiteEntity;
+  }
+
+  async update(prerequisiteId: string, updateDto: UpdatePrerequisiteDto) {
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
+
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { prerequisiteId },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new PrerequisiteEntity(Attributes!);
   }
 
   async findOne(prerequisiteId: string) {

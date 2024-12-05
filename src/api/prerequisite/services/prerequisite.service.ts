@@ -2,6 +2,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { HttpException } from "@/common/utils/http-exception";
 import { StatusCodes } from "http-status-codes";
 import type { CreatePrerequisiteDto } from "../dto/create-prerequisite.dto";
+import type { UpdatePrerequisiteDto } from "../dto/update-prerequisite.dto";
 import { prerequisiteRepository } from "../repositories/prerequisite.repository";
 
 class PrerequisiteService {
@@ -9,6 +10,12 @@ class PrerequisiteService {
     const newPrerequisite = await prerequisiteRepository.create(createDto);
 
     return ServiceResponse.success("Prerequisite created successfully", newPrerequisite, StatusCodes.CREATED);
+  }
+
+  async update(id: string, updateDto: UpdatePrerequisiteDto) {
+    const updatedData = await prerequisiteRepository.update(id, updateDto);
+
+    return ServiceResponse.success("Prerequisite updated successfully", updatedData, StatusCodes.OK);
   }
 
   async findAll() {
