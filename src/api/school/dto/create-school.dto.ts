@@ -6,6 +6,5 @@ export type CreateSchoolDto = z.infer<typeof CreateSchoolSchema>;
 export const CreateSchoolSchema = SchoolSchema.omit({
   createdAt: true,
   updatedAt: true,
-  gsiPartitionKey: true,
   prerequisiteIds: true,
 }).strict();
