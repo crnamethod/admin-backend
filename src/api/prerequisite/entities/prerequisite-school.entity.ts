@@ -8,7 +8,7 @@ export class PrerequisiteSchoolEntity implements PrerequisiteSchoolDto {
   schoolId!: string;
   prerequisiteId!: string;
   name!: string;
-  label?: string;
+  label!: string;
   notes!: string | null;
   min_grade_required!: string | null;
   recency!: number;
