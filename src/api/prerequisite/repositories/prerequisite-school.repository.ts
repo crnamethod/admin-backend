@@ -126,36 +126,95 @@ class PrerequisiteSchoolRepository {
     await dynamoClient.send(new BatchWriteCommand(params));
   }
 
-  // async migrate() {
-  //   const existing_prerequisites = await this.findAll();
+  async findAllById(prerequisiteId: string) {
+    const params: QueryCommandInput = {
+      TableName,
+      KeyConditionExpression: "prerequisiteId = :prerequisiteId",
+      ExpressionAttributeValues: {
+        ":prerequisiteId": prerequisiteId,
+      },
+    };
+
+    const { Items } = await dynamoClient.send(new QueryCommand(params));
+
+    if (Items && Items.length > 0) return Items.map((item) => new PrerequisiteSchoolEntity(item));
+
+    return [];
+  }
+
+  async updateMany(prerequisiteId: string, updateDto: UpdatePrerequisiteSchoolDto) {
+    const existing_prerequisite_schools = await this.findAllById(prerequisiteId);
+
+    const BATCH_SIZE = 20;
+    const updatedItems: PrerequisiteSchoolEntity[] = [];
+
+    for (let i = 0; i < existing_prerequisite_schools.length; i += BATCH_SIZE) {
+      const batch = existing_prerequisite_schools.slice(i, i + BATCH_SIZE);
+
+      const prereqSchools = batch.map((prerequisite) => {
+        if (updateDto.label) prerequisite.label = updateDto.label;
+
+        const params = {
+          PutRequest: {
+            Item: prerequisite,
+          },
+        };
+
+        updatedItems.push(prerequisite);
+
+        return params;
+      });
+
+      const params: BatchWriteCommandInput = {
+        RequestItems: {
+          [TableName]: prereqSchools,
+        },
+      };
+
+      await dynamoClient.send(new BatchWriteCommand(params));
+
+      // console.log(`${i} out of ${existing_prerequisite_schools.length}`);
+      // break;
+    }
+  }
+
+  // async updateAll() {
+  //   const existing_prerequisite_schools = await this.findAll();
+  //   const existing_prereq = await prerequisiteRepository.findAll();
 
   //   const BATCH_SIZE = 20;
   //   const updatedItems: any[] = [];
 
-  //   for (let i = 0; i < existing_prerequisites.length; i += BATCH_SIZE) {
-  //     const batch = existing_prerequisites.slice(i, i + BATCH_SIZE);
+  //   for (let i = 0; i < existing_prerequisite_schools.length; i += BATCH_SIZE) {
+  //     const batch = existing_prerequisite_schools.slice(i, i + BATCH_SIZE);
 
-  //     const prereqSchools = batch.map(({ /* prerequisite, */ prerequisiteId, ...prereqs }) => {
-  //       updatedItems.push(prereqs);
+  //     const prereqSchools = batch.map((prerequisite) => {
+  //       if (!prerequisite.label) {
+  //         const foundPrereq = existing_prereq.find((existing) => existing.prerequisiteId === prerequisite.prerequisiteId);
+
+  //         if (foundPrereq) prerequisite.label = foundPrereq.label;
+  //       }
 
   //       const params = {
   //         PutRequest: {
-  //           Item: prereqs,
+  //           Item: prerequisite,
   //         },
   //       };
+
+  //       updatedItems.push(prerequisite);
 
   //       return params;
   //     });
 
   //     const params: BatchWriteCommandInput = {
   //       RequestItems: {
-  //         [TableNameNew]: prereqSchools,
+  //         [TableName]: prereqSchools,
   //       },
   //     };
 
   //     await dynamoClient.send(new BatchWriteCommand(params));
 
-  //     console.log(`${batch.length} out of ${existing_prerequisites.length}`);
+  //     console.log(`${i} out of ${existing_prerequisite_schools.length}`);
   //     // break;
   //   }
 
