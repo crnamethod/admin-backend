@@ -17,6 +17,8 @@ export const env = cleanEnv(process.env, {
   AWS_SECRET_ACCESS_KEY: str(),
   AWS_DEFAULT_REGION: str(),
   AWS_S3_BUCKET: str(),
+  AWS_S3_ACCESS_KEY_ID: str(),
+  AWS_S3_SECRET_ACCESS_KEY: str(),
   USER_POOL_ID: str(),
   COGNITO_CLIENT_ID: str(),
   DYNAMODB_TBL_SCHOOLS: str(),

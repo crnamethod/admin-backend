@@ -12,11 +12,11 @@ export class SchoolEntity implements SchoolDto {
 
     Object.assign(this, data);
 
-    if (!data.createdAt && !existing) {
+    if (!data?.createdAt && !existing) {
       this.createdAt = nowISO();
     }
 
-    if (!data.updatedAt && !existing) {
+    if (!data?.updatedAt && !existing) {
       this.updatedAt = nowISO();
     }
 
@@ -191,8 +191,8 @@ export class SchoolEntity implements SchoolDto {
   flexibility_for_learning_disabilities!: string | null;
   support_for_underrepresented_minorities!: boolean;
 
-  pros!: string[];
-  cons!: string[];
+  pros!: string[] | null;
+  cons!: string[] | null;
   clinicIds!: string[] | null;
   prerequisiteIds!: string[] | null;
 

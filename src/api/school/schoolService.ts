@@ -1,11 +1,18 @@
 import type { UploadedFile } from "express-fileupload";
+import { StatusCodes } from "http-status-codes";
 
+import { ServiceResponse } from "@/common/models/serviceResponse";
 import { s3Service } from "@/common/services/s3.service";
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { HttpException } from "@/common/utils/http-exception";
 
+import { prerequisiteSchoolService } from "../prerequisite/services/prerequisite-school.service";
+import type { AssignClinicDto } from "./dto/assign-clinic.dto";
+import type { AssignPrerequisiteDto } from "./dto/assign-prerequisite.dto";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
 import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
+import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
+import type { RemovePrerequisiteDto } from "./dto/remove-prerequisite.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import type { SchoolImageBodyDto } from "./dto/upload-image.dto";
 import { schoolRepository } from "./schoolRepository";
@@ -28,8 +35,7 @@ class SchoolService {
   }
 
   async findOne(id: string, options?: GetCommandOptions) {
-    const school = await schoolRepository.findOne(id, options);
-    return school ?? null;
+    return await schoolRepository.findOne(id, options);
   }
 
   async findOneOrThrow(id: string, options?: GetCommandOptions) {
@@ -38,6 +44,40 @@ class SchoolService {
     if (!school) throw new HttpException("School not found", 404);
 
     return school;
+  }
+
+  async assignClinic(assignDto: AssignClinicDto) {
+    assignDto.clinicIds = new Set(assignDto.clinicIds);
+
+    const updatedSchool = await schoolRepository.assignClinic(assignDto);
+
+    return ServiceResponse.success("Clinic added successfully", updatedSchool, StatusCodes.CREATED);
+  }
+
+  async removeClinic(removeDto: RemoveClinicDto) {
+    removeDto.clinicIds = new Set(removeDto.clinicIds);
+
+    const updatedSchool = await schoolRepository.removeClinic(removeDto);
+
+    return ServiceResponse.success("Clinic removed successfully", updatedSchool, StatusCodes.OK);
+  }
+
+  async assignPrerequisite(assignDto: AssignPrerequisiteDto) {
+    const updatedSchool = await schoolRepository.assignPrerequisite(assignDto);
+
+    return ServiceResponse.success("Prerequisite added successfully", updatedSchool, StatusCodes.CREATED);
+  }
+
+  async removePrerequisite(removeDto: RemovePrerequisiteDto) {
+    const updatedSchool = await schoolRepository.removePrerequisite(removeDto);
+
+    // * Delete associated prerequisite schools by PREREQUISITE ID
+    await prerequisiteSchoolService.remove(
+      removeDto.id,
+      removeDto.prerequisites.map((p) => p.prerequisiteId),
+    );
+
+    return ServiceResponse.success("Prerequisite removed successfully", updatedSchool, StatusCodes.OK);
   }
 
   async upload({ id, type }: SchoolImageBodyDto, file: UploadedFile) {

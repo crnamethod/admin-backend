@@ -1,102 +1,76 @@
+import {
+  GetCommand,
+  QueryCommand,
+  type QueryCommandInput,
+  type ScanCommandInput,
+  paginateScan,
+} from "@aws-sdk/lib-dynamodb";
+
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-import {
-  GetItemCommand,
-  PutItemCommand,
-  ScanCommand,
-  type ScanCommandInput,
-  UpdateItemCommand,
-  QueryCommand,
-} from "@aws-sdk/client-dynamodb";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
-import type { Review } from "./reviewModel";
+
+import type { FindAllReviewDto } from "./dto/get-all-review.dto";
+import { ReviewEntity } from "./entity/review.entity";
+import type { ReviewDto } from "./reviewModel";
 
 const TableName = env.DYNAMODB_TBL_REVIEWS;
 
-export const listReviews = async (
-  lastReviewId?: string, // Review ID to start from (for pagination)
-  limit = 10 // Number of items to return per page
-): Promise<{ reviews: Review[]; lastEvaluatedKey?: string }> => {
-  const params: ScanCommandInput = {
-    TableName,
-    Limit: limit, // Set the limit for pagination
-  };
+class ReviewRepository {
+  async findAll(query: FindAllReviewDto) {
+    const { limit = 10, startingToken } = query || {};
 
-  // If lastReviewId is provided, set it as the ExclusiveStartKey for pagination
-  if (lastReviewId) {
-    params.ExclusiveStartKey = {
-      reviewId: { S: lastReviewId }, // The key must be in DynamoDB attribute format
+    const params: ScanCommandInput = {
+      TableName,
+      Limit: limit,
+    };
+
+    const paginator = paginateScan({ client: dynamoClient, startingToken }, params);
+
+    const accumulatedItems: any[] = [];
+    let lastEvaluatedKey: any;
+
+    for await (const page of paginator) {
+      accumulatedItems.push(...page.Items!);
+      console.log(accumulatedItems.length);
+      lastEvaluatedKey = page.LastEvaluatedKey;
+
+      if (accumulatedItems.length >= limit) break;
+    }
+
+    const reviews = accumulatedItems.map((item) => new ReviewEntity(item));
+
+    return {
+      lastEvaluatedKey: lastEvaluatedKey ?? null,
+      total: reviews.length,
+      data: reviews,
     };
   }
 
-  try {
-    // Scan the DynamoDB table
-    const { Items, LastEvaluatedKey } = await dynamoClient.send(
-      new ScanCommand(params)
-    );
+  async findReviewsBySchoolIdAsync(schoolId: string): Promise<ReviewDto[]> {
+    const params: QueryCommandInput = {
+      TableName,
+      IndexName: "SchoolIdIndex",
+      KeyConditionExpression: "schoolId = :schoolId",
+      ExpressionAttributeValues: {
+        ":schoolId": schoolId,
+      },
+    };
 
-    if (!Items) return { reviews: [] };
+    const { Items } = await dynamoClient.send(new QueryCommand(params));
 
-    // Unmarshall and return the items as reviews
-    const reviews: Review[] = Items.map((item) => {
-      const reviewData = unmarshall(item);
-      return reviewData as Review;
-    });
-
-    // Extract the last reviewId if there's more data to retrieve
-    const lastEvaluatedReviewId = LastEvaluatedKey
-      ? LastEvaluatedKey.reviewId?.S
-      : undefined;
-
-    return { reviews, lastEvaluatedKey: lastEvaluatedReviewId };
-  } catch (error) {
-    console.error("Error scanning reviews:", error);
-    throw new Error("Could not retrieve reviews information");
+    return Items!.map((item) => new ReviewEntity(item));
   }
-};
 
-export const listReview = async (reviewId: string) => {
-  const params = {
-    TableName: TableName,
-    Key: {
-      reviewId: { S: reviewId },
-    },
-  };
+  async findOne(reviewId: string) {
+    const params = {
+      TableName,
+      Key: { reviewId },
+    };
 
-  try {
-    const { Item } = await dynamoClient.send(new GetItemCommand(params));
-    if (!Item) return null;
+    const { Item } = await dynamoClient.send(new GetCommand(params));
 
-    const review = unmarshall(Item);
-
-    return review;
-  } catch (error) {
-    console.error("Error fetching review by ID:", error);
-    throw new Error("Could not retrieve review information");
+    return Item ? new ReviewEntity(Item) : null;
   }
-};
+}
 
-export const ReviewPerSchool = async (schoolId: string) => {
-  const params = {
-    TableName: TableName,
-    FilterExpression: "#schoolId = :schoolId",
-    ExpressionAttributeNames: {
-      "#schoolId": "schoolId",
-    },
-    ExpressionAttributeValues: {
-      ":schoolId": { S: schoolId },
-    },
-  };
-
-  try {
-    const { Items } = await dynamoClient.send(new ScanCommand(params));
-    if (!Items) return null;
-
-    const reviews = Items.map((item) => unmarshall(item) as Review);
-
-    return reviews;
-  } catch (error) {
-    console.error("Error fetching review by school id:", error);
-    throw new Error("Could not retrieve review information");
-  }
-};
+export const reviewRepository = new ReviewRepository();

@@ -2,7 +2,7 @@ import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { generateUUID } from "@/common/utils/idGenerator";
 
-import type { PrerequisiteDto } from "../prerequisite.model";
+import type { PrerequisiteDto } from "../models/prerequisite.model";
 
 export class PrerequisiteEntity implements PrerequisiteDto {
   constructor(data: Partial<PrerequisiteEntity>, options?: EntityOptions) {
@@ -24,6 +24,7 @@ export class PrerequisiteEntity implements PrerequisiteDto {
   }
 
   prerequisiteId!: string;
+  label!: string;
   name!: string;
   createdAt!: string;
   updatedAt!: string;

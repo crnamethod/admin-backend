@@ -172,12 +172,11 @@ export const SchoolSchema = z.object({
   //   .nullable()
   //   .default(null),
 
-  // clinicIds: z.array(z.string()).nullable().default(null),
-  clinicIds: z.any().nullable().default(null),
+  clinicIds: z.array(z.string()).nullable().default(null),
   prerequisiteIds: z.any().nullable().default(null),
 
-  pros: z.any().nullable().default(null),
-  cons: z.any().nullable().default(null),
+  pros: z.array(z.string()).nullable().default(null),
+  cons: z.array(z.string()).nullable().default(null),
 
   createdAt: z.string().default(nowISO()),
   updatedAt: z.string().default(nowISO()),
