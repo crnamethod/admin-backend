@@ -19,7 +19,7 @@ class S3Service {
   async uploadFile(path: string, file: UploadedFile, fileName?: string) {
     const ext_name = file.name.split(".")[1];
     const name = fileName ?? "CRNA";
-    const Key = `${name}-${Date.now()}.${ext_name}`;
+    const Key = `${name}.${ext_name}`;
 
     const bufferData = fs.readFileSync(file.tempFilePath);
 
