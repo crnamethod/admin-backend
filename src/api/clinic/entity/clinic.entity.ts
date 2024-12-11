@@ -2,7 +2,7 @@ import { nowISO } from "@/common/utils/date";
 import { generateUUID } from "@/common/utils/idGenerator";
 
 import type { EntityOptions } from "@/common/types/entity.type";
-import type { ClinicType } from "../clinicModel";
+import type { ClinicType } from "../clinic.model";
 
 export class ClinicEntity implements ClinicType {
   constructor(data: Partial<ClinicEntity>, options?: EntityOptions) {

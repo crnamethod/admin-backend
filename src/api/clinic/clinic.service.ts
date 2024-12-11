@@ -3,21 +3,20 @@ import { StatusCodes } from "http-status-codes";
 import { ServiceResponse } from "@/common/models/serviceResponse";
 import { HttpException } from "@/common/utils/http-exception";
 
-import { clinicRepository } from "./clinicRepository";
+import { clinicReviewService } from "../clinic-review/clinic-review.service";
+import { schoolService } from "../school/schoolService";
+import { clinicRepository } from "./clinic.repository";
 import type { CreateClinicDto } from "./dto/create-clinic.dto";
+import type { FindAllClinicBySchoolDto } from "./dto/get-all-clinic-by-school.dto";
 import type { FindAllClinicDto } from "./dto/get-all-clinic.dto";
 import type { UpdateClinicDto } from "./dto/update-clinic.dto";
+import { ClinicEntity } from "./entity/clinic.entity";
 
 class ClinicService {
   async createClinic(createDto: CreateClinicDto) {
     const foundClinic = await clinicRepository.findByNameAndAddress(createDto.name, createDto.address);
 
-    if (foundClinic)
-      return ServiceResponse.failure(
-        "Clinic with the same name and address already exists",
-        null,
-        StatusCodes.BAD_REQUEST,
-      );
+    if (foundClinic) throw new HttpException("Clinic with the same name and address already exists", 400);
 
     const newClinic = await clinicRepository.create(createDto);
 
@@ -32,6 +31,23 @@ class ClinicService {
   async findAll(query: FindAllClinicDto) {
     const clinics = await clinicRepository.findAll(query);
     return ServiceResponse.success("Clinic updated successfully", clinics, StatusCodes.OK);
+  }
+
+  async findAllBySchool({ schoolId }: FindAllClinicBySchoolDto) {
+    const school = await schoolService.findOneOrThrow(schoolId);
+
+    if (!school.clinicIds) throw new HttpException("There are no clinics assigned for this school", 400);
+
+    const clinics = await clinicRepository.findAllByIds(school.clinicIds);
+
+    const clinicsEntity = await Promise.all(
+      clinics.map(async (c) => {
+        const ratings = await clinicReviewService.calculateRatings(c.clinicId);
+        return new ClinicEntity({ ...c, ratings });
+      }),
+    );
+
+    return ServiceResponse.success("Clinics fetched successfully", clinicsEntity, StatusCodes.OK);
   }
 
   async findOne(clinicId: string) {
