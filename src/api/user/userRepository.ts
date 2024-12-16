@@ -27,7 +27,7 @@ export class UserRepository {
 
     const { Items } = await dynamoClient.send(new ScanCommand(params));
 
-    if (Items && Items.length > 0) Items.map((item) => new UserEntity(item));
+    if (Items && Items.length > 0) return Items.map((item) => new UserEntity(item));
 
     return [];
   }
@@ -44,7 +44,7 @@ export class UserRepository {
     return Item ? new UserEntity(Item) : null;
   }
 
-  async updateProfileAsync(userId: string, profileUpdates: Partial<UserProfile>): Promise<UserProfile> {
+  async updateProfileAsync(userId: string, profileUpdates: Partial<UserProfile>) {
     if (profileUpdates.username) {
       const usernameExists = await this.findProfileByUsernameAsync(profileUpdates.username);
 
@@ -64,13 +64,9 @@ export class UserRepository {
       ReturnValues: "ALL_NEW",
     };
 
-    try {
-      const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
-      return Attributes as UserProfile;
-    } catch (error) {
-      console.error("Error updating user profile:", error);
-      throw new Error("Could not update user profile");
-    }
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new UserEntity(Attributes);
   }
 
   async findProfileByUsernameAsync(username: string): Promise<UserProfile | null> {

@@ -6,9 +6,11 @@ import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetUserSchema, UserProfileSchema } from "@/api/user/userModel";
 import { validateRequest } from "@/common/utils/httpHandlers";
 
+import { UploadImageSchema } from "@/common/dto/upload-image.dto";
 import { CreateUserProfileSchema } from "./dto/create-user.dto";
 import { UpdatePasswordSchema } from "./dto/update-password.dto";
 import { UpdateProfileSchema } from "./dto/update-profile.dto";
+import { UserProfileBodySchema } from "./dto/upload-photo.dto";
 import { userController } from "./userController";
 
 export const userRegistry = new OpenAPIRegistry();
@@ -95,4 +97,8 @@ userRegistry.registerPath({
 });
 userRouter.put("/profile/:userId", validateRequest({ body: UpdatePasswordSchema }), userController.changePassword);
 
-userRouter.post("/upload", userController.uploadPicture);
+userRouter.post(
+  "/upload",
+  validateRequest({ body: UserProfileBodySchema, files: { schema: UploadImageSchema, fileName: "file" } }),
+  userController.uploadPicture,
+);

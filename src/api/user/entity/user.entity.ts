@@ -11,6 +11,7 @@ export class UserEntity implements UserProfile {
   stripeCustomerId!: string;
   firstName!: string;
   lastName!: string;
+  image_path!: string;
   lastPaymentStatus!: string;
   username!: string;
   createdAt!: string;
