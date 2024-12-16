@@ -30,7 +30,7 @@ class ClinicService {
 
   async findAll(query: FindAllClinicDto) {
     const clinics = await clinicRepository.findAll(query);
-    return ServiceResponse.success("Clinic updated successfully", clinics, StatusCodes.OK);
+    return ServiceResponse.success("All Clinics fetched successfully", clinics, StatusCodes.OK);
   }
 
   async findAllBySchool({ schoolId }: FindAllClinicBySchoolDto) {
