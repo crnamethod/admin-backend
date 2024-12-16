@@ -9,20 +9,22 @@ import { s3Service } from "@/common/services/s3.service";
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
-import { logger } from "@/server";
 
 import type { CreateUserProfileDto } from "./dto/create-user.dto";
+import type { UpdateProfileDto } from "./dto/update-profile.dto";
 import type { UserProfileBodyDto } from "./dto/upload-photo.dto";
 
 export class UserService {
   private userRepository: UserRepository;
   private cognitoClient: CognitoIdentityProviderClient;
   private userPoolId: string;
+  private readonly path: string;
 
   constructor(repository: UserRepository = new UserRepository()) {
     this.userRepository = repository;
     this.cognitoClient = new CognitoIdentityProviderClient({ region: env.AWS_DEFAULT_REGION });
     this.userPoolId = env.USER_POOL_ID;
+    this.path = "profile_photos";
   }
 
   // Retrieves all users from the database
@@ -49,26 +51,14 @@ export class UserService {
     return ServiceResponse.success<UserProfile>("User found", user);
   }
 
-  async update(userId: string, profileUpdates: Partial<UserProfile>): Promise<ServiceResponse<UserProfile | null>> {
-    try {
-      const updatedProfile = await this.userRepository.updateProfileAsync(userId, profileUpdates);
-      return ServiceResponse.success<UserProfile>("Profile updated", updatedProfile, StatusCodes.OK);
-    } catch (ex) {
-      const errorMessage = `Error updating profile: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure(errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
-    }
+  async update(userId: string, updateDto: UpdateProfileDto): Promise<ServiceResponse<UserProfile | null>> {
+    const updatedProfile = await this.userRepository.updateProfileAsync(userId, updateDto);
+    return ServiceResponse.success<UserProfile>("Profile updated", updatedProfile, StatusCodes.OK);
   }
 
-  async create(profile: CreateUserProfileDto): Promise<ServiceResponse<null>> {
-    try {
-      await this.userRepository.createProfileAsync(profile);
-      return ServiceResponse.success<null>("Profile created", null, StatusCodes.CREATED);
-    } catch (ex) {
-      const errorMessage = `Error creating profile: ${(ex as Error).message}`;
-      logger.error(errorMessage);
-      return ServiceResponse.failure(errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
-    }
+  async create(profile: CreateUserProfileDto) {
+    await this.userRepository.createProfileAsync(profile);
+    return ServiceResponse.success<null>("Profile created", null, StatusCodes.CREATED);
   }
 
   async changePassword(username: string, newPassword: string): Promise<void> {
@@ -88,16 +78,18 @@ export class UserService {
     }
   }
 
-  // TODO
   async upload({ id }: UserProfileBodyDto, file: UploadedFile) {
-    // // ? check if journalId is existing in the Database
-    // const foundUser = await this.findOneOrThrow(id, { ProjectionExpression: 'image_url' });
-    // if (foundUser?.image_url) {
-    //   // ? Delete the existing file from S3
-    //   await this.deleteFile(path, foundUser[type]);
-    // }
-    // const fileUrl = await s3Service.uploadFile(path, file, id);
-    // return await this.update(id, { [type]: fileUrl });
+    // ? check if user is existing in the Database
+    const { responseObject: foundUser } = await this.findOneOrThrow(id, { ProjectionExpression: "image_path" });
+
+    if (foundUser.image_path) {
+      // ? Delete the existing file from S3
+      await s3Service.deleteFile(this.path, foundUser.image_path);
+    }
+
+    const fileUrl = await s3Service.uploadFile(this.path, file, id);
+
+    return await this.update(id, { image_path: fileUrl });
   }
 
   async deleteFile(path: string, key: string) {
