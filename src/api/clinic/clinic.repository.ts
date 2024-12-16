@@ -1,4 +1,6 @@
 import {
+  BatchGetCommand,
+  type BatchGetCommandInput,
   GetCommand,
   type GetCommandInput,
   PutCommand,
@@ -11,6 +13,7 @@ import {
   paginateScan,
 } from "@aws-sdk/lib-dynamodb";
 
+import type { BatchGetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
@@ -89,6 +92,29 @@ class ClinicRepository {
       total: clinics.length,
       data: clinics,
     };
+  }
+
+  async findAllByIds(clinicIds: string[], options?: BatchGetCommandOptions) {
+    const Keys = clinicIds.map((clinicId) => ({ clinicId }));
+    const { ProjectionExpression, ExpressionAttributeNames } = options || {};
+
+    const params: BatchGetCommandInput = {
+      RequestItems: {
+        [TableName]: {
+          Keys,
+          ...(options?.ProjectionExpression && {
+            ProjectionExpression,
+            ExpressionAttributeNames,
+          }),
+        },
+      },
+    };
+
+    const { Responses } = await dynamoClient.send(new BatchGetCommand(params));
+
+    const DevClinics = (Responses?.[TableName] as ClinicEntity[]) || [];
+
+    return DevClinics.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async findOne(clinicId: string) {

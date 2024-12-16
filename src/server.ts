@@ -10,7 +10,8 @@ import { userRouter } from "@/api/user/userRouter";
 import { globalExceptionHandler } from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
-import { clinicRouter } from "./api/clinic/clinicRouter";
+import { clinicReviewRouter } from "./api/clinic-review/clinic-review.router";
+import { clinicRouter } from "./api/clinic/clinic.router";
 import { prerequisiteSchoolRouter } from "./api/prerequisite/prerequisite-school.router";
 import { prerequisiteRouter } from "./api/prerequisite/prerequisite.router";
 import { reviewRouter } from "./api/review/reviewRouter";
@@ -45,6 +46,7 @@ app.use("/api/user", userRouter);
 app.use("/api/school", schoolRouter);
 app.use("/api/review", reviewRouter);
 app.use("/api/clinic", clinicRouter);
+app.use("/api/clinic-review", clinicReviewRouter);
 app.use("/api/prerequisite", prerequisiteRouter);
 app.use("/api/prerequisite-school", prerequisiteSchoolRouter);
 
