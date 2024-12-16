@@ -36,7 +36,7 @@ class ClinicService {
   async findAllBySchool({ schoolId }: FindAllClinicBySchoolDto) {
     const school = await schoolService.findOneOrThrow(schoolId);
 
-    if (!school.clinicIds) throw new HttpException("There are no clinics assigned for this school", 400);
+    if (!school.clinicIds) return ServiceResponse.success("There are no clinics assigned for this school", [], StatusCodes.NOT_FOUND);
 
     const clinics = await clinicRepository.findAllByIds(school.clinicIds);
 
