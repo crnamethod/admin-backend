@@ -97,6 +97,8 @@ class SchoolService {
   }
 
   async softDelete(schoolId: string) {
+    await this.findOneOrThrow(schoolId, { ProjectionExpression: "id" });
+
     const school = await schoolRepository.softDelete(schoolId);
     return ServiceResponse.success("School archived successfully", school, StatusCodes.OK);
   }
@@ -111,10 +113,12 @@ class SchoolService {
 
     const { responseObject: prerequisitesSchool } = await prerequisiteSchoolService.findAllBySchool(schoolId);
 
-    await prerequisiteSchoolService.remove(
-      schoolId,
-      prerequisitesSchool.map((ps) => ps.prerequisiteId),
-    );
+    if (prerequisitesSchool.length > 0) {
+      await prerequisiteSchoolService.remove(
+        schoolId,
+        prerequisitesSchool.map((ps) => ps.prerequisiteId),
+      );
+    }
 
     return ServiceResponse.success("School deleted successfully", null, StatusCodes.NO_CONTENT);
   }
