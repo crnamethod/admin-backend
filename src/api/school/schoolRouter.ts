@@ -84,14 +84,14 @@ schoolRouter.post("/", validateRequest({ body: CreateSchoolSchema }), schoolCont
 schoolRouter.post("/assign-clinic", validateRequest({ body: AssignClinicSchema }), schoolController.assignClinic);
 schoolRouter.post("/remove-clinic", validateRequest({ body: RemoveClinicSchema }), schoolController.removeClinic);
 
-schoolRouter.post(
-  "/remove-prerequisite",
-  validateRequest({ body: RemovePrerequisiteSchema }),
-  schoolController.removePrerequisite,
-);
+schoolRouter.post("/remove-prerequisite", validateRequest({ body: RemovePrerequisiteSchema }), schoolController.removePrerequisite);
 
 schoolRouter.post(
   "/upload",
   validateRequest({ body: SchoolImageBodySchema, files: { schema: UploadImageSchema, fileName: "file" } }),
   schoolController.uploadPicture,
 );
+
+schoolRouter.delete("/:id", schoolController.softDelete);
+schoolRouter.patch("/restore/:id", schoolController.restore);
+schoolRouter.delete("/force/:id", schoolController.forceRemove);

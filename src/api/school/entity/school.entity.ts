@@ -198,6 +198,7 @@ export class SchoolEntity implements SchoolDto {
 
   createdAt!: string;
   updatedAt!: string;
+  deletedAt!: string | null;
 
   prerequisites?: PrerequisiteSchoolEntity[];
 }

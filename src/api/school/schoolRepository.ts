@@ -1,4 +1,6 @@
 import {
+  DeleteCommand,
+  type DeleteCommandInput,
   GetCommand,
   type GetCommandInput,
   PutCommand,
@@ -9,6 +11,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
+import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
@@ -43,7 +46,7 @@ class SchoolRepository {
       ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
     };
 
-    const filterExpressions: string[] = ["#hide = :hide"];
+    const filterExpressions: string[] = ["#hide = :hide", "attribute_not_exists(deletedAt) OR deletedAt = :null"];
 
     const expressionAttributeNames: { [key: string]: string } = {
       "#hide": "hide",
@@ -55,6 +58,7 @@ class SchoolRepository {
     const expressionAttributeValues: { [key: string]: any } = {
       ":hide": false,
       ":gsiValue": "ALL",
+      ":null": null,
     };
 
     if (filters) {
@@ -295,6 +299,8 @@ class SchoolRepository {
   }
 
   async assignClinic(dto: AssignClinicDto) {
+    await this.initializeClinicIdsIfNull(dto.id);
+
     const params = this.assignOrRemoveClinicParams(dto, "ADD");
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
@@ -331,6 +337,47 @@ class SchoolRepository {
     return new SchoolEntity(Attributes!);
   }
 
+  async softDelete(id: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: "SET deletedAt = :deletedAt",
+      ExpressionAttributeValues: {
+        ":deletedAt": nowISO(),
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  async restore(id: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      UpdateExpression: "SET deletedAt = :deletedAt",
+      ExpressionAttributeValues: {
+        ":deletedAt": null,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new SchoolEntity(Attributes!);
+  }
+
+  async forceRemove(id: string) {
+    const params: DeleteCommandInput = {
+      TableName,
+      Key: { id },
+    };
+
+    await dynamoClient.send(new DeleteCommand(params));
+  }
+
   private assignOrRemoveClinicParams({ id, clinicIds }: AssignClinicDto | RemoveClinicDto, action: "ADD" | "DELETE") {
     const params: UpdateCommandInput = {
       TableName,
@@ -343,6 +390,24 @@ class SchoolRepository {
     };
 
     return params;
+  }
+
+  private async initializeClinicIdsIfNull(id: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      ConditionExpression: "attribute_exists(clinicIds) AND clinicIds = :null",
+      UpdateExpression: "REMOVE clinicIds",
+      ExpressionAttributeValues: {
+        ":null": null,
+      },
+    };
+
+    try {
+      await dynamoClient.send(new UpdateCommand(params));
+    } catch (error) {
+      // * Do not throw an error
+    }
   }
 
   private assignOrRemovePrerequisiteParams({ id, prerequisiteIds }: AssignPrerequisiteDto, action: "ADD" | "DELETE") {

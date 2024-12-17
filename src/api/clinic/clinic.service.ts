@@ -16,7 +16,7 @@ class ClinicService {
   async createClinic(createDto: CreateClinicDto) {
     const foundClinic = await clinicRepository.findByNameAndAddress(createDto.name, createDto.address);
 
-    if (foundClinic) throw new HttpException("Clinic with the same name and address already exists", 400);
+    if (foundClinic && !foundClinic.deletedAt) throw new HttpException("Clinic with the same name and address already exists", 400);
 
     const newClinic = await clinicRepository.create(createDto);
 
@@ -62,6 +62,21 @@ class ClinicService {
     if (!clinic) throw new HttpException("Clinic not found", 404);
 
     return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
+  }
+
+  async softDelete(clinicId: string) {
+    const clinic = await clinicRepository.softDelete(clinicId);
+    return ServiceResponse.success("Clinic archived successfully", clinic, StatusCodes.OK);
+  }
+
+  async restore(clinicId: string) {
+    const clinic = await clinicRepository.restore(clinicId);
+    return ServiceResponse.success("Clinic restored successfully", clinic, StatusCodes.OK);
+  }
+
+  async forceRemove(clinicId: string) {
+    await clinicRepository.forceRemove(clinicId);
+    return ServiceResponse.success("Clinic deleted successfully", null, StatusCodes.NO_CONTENT);
   }
 }
 

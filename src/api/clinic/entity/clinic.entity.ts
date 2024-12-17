@@ -31,4 +31,5 @@ export class ClinicEntity implements ClinicType {
   ratings!: number;
   createdAt!: string;
   updatedAt!: string;
+  deletedAt!: string | null;
 }

@@ -34,6 +34,21 @@ class ClinicController {
     const data = await clinicService.findOneOrThrow(req.params.id);
     res.status(data.statusCode).json(data);
   });
+
+  public softDelete = expressAsyncHandler(async (req, res) => {
+    const data = await clinicService.softDelete(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
+
+  public restore = expressAsyncHandler(async (req, res) => {
+    const data = await clinicService.restore(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
+
+  public forceRemove = expressAsyncHandler(async (req, res) => {
+    const data = await clinicService.forceRemove(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
 }
 
 export const clinicController = new ClinicController();
