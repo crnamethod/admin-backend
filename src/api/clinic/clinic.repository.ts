@@ -1,6 +1,8 @@
 import {
   BatchGetCommand,
   type BatchGetCommandInput,
+  DeleteCommand,
+  type DeleteCommandInput,
   GetCommand,
   type GetCommandInput,
   PutCommand,
@@ -14,6 +16,7 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 import type { BatchGetCommandOptions } from "@/common/types/dynamo-options.type";
+import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
@@ -154,6 +157,47 @@ class ClinicRepository {
     }
 
     return null;
+  }
+
+  async softDelete(clinicId: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { clinicId },
+      UpdateExpression: "SET deletedAt = :deletedAt",
+      ExpressionAttributeValues: {
+        ":deletedAt": nowISO(),
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new ClinicEntity(Attributes!);
+  }
+
+  async restore(clinicId: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { clinicId },
+      UpdateExpression: "SET deletedAt = :deletedAt",
+      ExpressionAttributeValues: {
+        ":deletedAt": null,
+      },
+      ReturnValues: "ALL_NEW",
+    };
+
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new ClinicEntity(Attributes!);
+  }
+
+  async forceRemove(clinicId: string) {
+    const params: DeleteCommandInput = {
+      TableName,
+      Key: { clinicId },
+    };
+
+    await dynamoClient.send(new DeleteCommand(params));
   }
 }
 

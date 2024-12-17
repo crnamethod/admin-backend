@@ -178,6 +178,7 @@ export const SchoolSchema = z.object({
   pros: z.array(z.string()).nullable().default(null),
   cons: z.array(z.string()).nullable().default(null),
 
-  createdAt: z.string().default(nowISO()),
-  updatedAt: z.string().default(nowISO()),
+  createdAt: z.string().default(nowISO()).optional(),
+  updatedAt: z.string().default(nowISO()).optional(),
+  deletedAt: z.string().nullable().default(null).optional(),
 });

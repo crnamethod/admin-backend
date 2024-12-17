@@ -96,6 +96,29 @@ class SchoolService {
     return await this.update(id, { [type]: fileUrl });
   }
 
+  async softDelete(schoolId: string) {
+    const school = await schoolRepository.softDelete(schoolId);
+    return ServiceResponse.success("School archived successfully", school, StatusCodes.OK);
+  }
+
+  async restore(schoolId: string) {
+    const school = await schoolRepository.restore(schoolId);
+    return ServiceResponse.success("School restored successfully", school, StatusCodes.OK);
+  }
+
+  async forceRemove(schoolId: string) {
+    await schoolRepository.forceRemove(schoolId);
+
+    const { responseObject: prerequisitesSchool } = await prerequisiteSchoolService.findAllBySchool(schoolId);
+
+    await prerequisiteSchoolService.remove(
+      schoolId,
+      prerequisitesSchool.map((ps) => ps.prerequisiteId),
+    );
+
+    return ServiceResponse.success("School deleted successfully", null, StatusCodes.NO_CONTENT);
+  }
+
   async deleteFile(path: string, key: string) {
     return await s3Service.deleteFile(path, key);
   }

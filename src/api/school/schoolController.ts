@@ -41,21 +41,34 @@ class SchoolController {
     res.status(data.statusCode).json(data);
   });
 
-  public removePrerequisite: RequestHandler = expressAsyncHandler(
-    async (req: TypedRequestBody<RemovePrerequisiteDto>, res) => {
-      const data = await schoolService.removePrerequisite(req.body);
-      res.status(data.statusCode).json(data);
-    },
-  );
+  public removePrerequisite: RequestHandler = expressAsyncHandler(async (req: TypedRequestBody<RemovePrerequisiteDto>, res) => {
+    const data = await schoolService.removePrerequisite(req.body);
+    res.status(data.statusCode).json(data);
+  });
 
-  public uploadPicture: RequestHandler = async (req: TypedRequestBody<SchoolImageBodyDto>, res: Response) => {
+  public uploadPicture: RequestHandler = expressAsyncHandler(async (req: TypedRequestBody<SchoolImageBodyDto>, res: Response) => {
     const data = await schoolService.upload(req.body, req.files?.file as UploadedFile);
 
     res.status(200).json({
       message: "Image uploaded successfully",
       data,
     });
-  };
+  });
+
+  public softDelete = expressAsyncHandler(async (req, res) => {
+    const data = await schoolService.softDelete(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
+
+  public restore = expressAsyncHandler(async (req, res) => {
+    const data = await schoolService.restore(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
+
+  public forceRemove = expressAsyncHandler(async (req, res) => {
+    const data = await schoolService.forceRemove(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
 }
 
 export const schoolController = new SchoolController();

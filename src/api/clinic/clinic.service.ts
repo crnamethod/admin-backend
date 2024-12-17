@@ -63,6 +63,21 @@ class ClinicService {
 
     return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
   }
+
+  async softDelete(clinicId: string) {
+    const clinic = await clinicRepository.softDelete(clinicId);
+    return ServiceResponse.success("Clinic archived successfully", clinic, StatusCodes.OK);
+  }
+
+  async restore(clinicId: string) {
+    const clinic = await clinicRepository.restore(clinicId);
+    return ServiceResponse.success("Clinic restored successfully", clinic, StatusCodes.OK);
+  }
+
+  async forceRemove(clinicId: string) {
+    await clinicRepository.forceRemove(clinicId);
+    return ServiceResponse.success("Clinic deleted successfully", null, StatusCodes.NO_CONTENT);
+  }
 }
 
 export const clinicService = new ClinicService();
