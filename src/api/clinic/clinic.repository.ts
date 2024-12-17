@@ -74,6 +74,10 @@ class ClinicRepository {
     const params: ScanCommandInput = {
       TableName,
       Limit: limit,
+      FilterExpression: "attribute_not_exists(deletedAt) OR deletedAt = :null",
+      ExpressionAttributeValues: {
+        ":null": null,
+      },
     };
 
     const paginator = paginateScan({ client: dynamoClient, startingToken }, params);
@@ -117,7 +121,7 @@ class ClinicRepository {
 
     const DevClinics = (Responses?.[TableName] as ClinicEntity[]) || [];
 
-    return DevClinics.sort((a, b) => a.name.localeCompare(b.name));
+    return DevClinics.sort((a, b) => a.name.localeCompare(b.name)).filter((c) => !c.deletedAt);
   }
 
   async findOne(clinicId: string) {
