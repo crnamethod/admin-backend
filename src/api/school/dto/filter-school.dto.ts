@@ -7,7 +7,14 @@ extendZodWithOpenApi(z);
 
 export type GetSchoolsQueryDto = z.infer<typeof GetSchoolsQuerySchema>;
 
+export enum FetchEnum {
+  NO_TRASH = "NO_TRASH",
+  WITH_TRASH = "WITH_TRASH",
+  TRASH_ONLY = "TRASH_ONLY",
+}
+
 export const GetSchoolsQuerySchema = z.object({
+  fetch: z.nativeEnum(FetchEnum).default(FetchEnum.NO_TRASH).optional(),
   search: z
     .string()
     .transform((val) => val.toLowerCase())
@@ -40,34 +47,24 @@ export const GetSchoolsQuerySchema = z.object({
   in_state_tuition: rangeObject.optional(),
   out_state_tuition: rangeObject.optional(),
   not_required: transformArrayObject
-    .refine(
-      (arr: string[]) => arr.every((item: string) => ["GRE", "SHADOW_EXPERIENCE", "CCRN", "BSN"].includes(item)),
-      {
-        message: "value must be in the following: GRE, SHADOW_EXPERIENCE, CCRN, BSN",
-      },
-    )
+    .refine((arr: string[]) => arr.every((item: string) => ["GRE", "SHADOW_EXPERIENCE", "CCRN", "BSN"].includes(item)), {
+      message: "value must be in the following: GRE, SHADOW_EXPERIENCE, CCRN, BSN",
+    })
     .optional(),
   nursing_cas: tranformBooleanObject.optional(),
   new_program: tranformBooleanObject.optional(),
   acceptance_rate: rangeObject.optional(),
   other: transformArrayObject
-    .refine(
-      (arr: string[]) => arr.every((item: string) => ["FULLY_ONLINE_SEMESTERS", "LAST_60_UNITS"].includes(item)),
-      {
-        message: "value must be in the following: FULLY_ONLINE_SEMESTERS, LAST_60_UNITS",
-      },
-    )
+    .refine((arr: string[]) => arr.every((item: string) => ["FULLY_ONLINE_SEMESTERS", "LAST_60_UNITS"].includes(item)), {
+      message: "value must be in the following: FULLY_ONLINE_SEMESTERS, LAST_60_UNITS",
+    })
     .optional(),
   minimum_science_gpa: rangeObject.optional(),
   class_size_category: z.enum(["small", "medium", "large"]).optional(),
   facilities: transformArrayObject
-    .refine(
-      (arr: string[]) =>
-        arr.every((item: string) => ["CADAVER_LAB", "CRNA_ONLY_SITES", "SIMULATION_LAB"].includes(item)),
-      {
-        message: "value must be in the following: CADAVER_LAB, CRNA_ONLY_SITES, SIMULATION_LAB",
-      },
-    )
+    .refine((arr: string[]) => arr.every((item: string) => ["CADAVER_LAB", "CRNA_ONLY_SITES", "SIMULATION_LAB"].includes(item)), {
+      message: "value must be in the following: CADAVER_LAB, CRNA_ONLY_SITES, SIMULATION_LAB",
+    })
     .optional(),
   state: transformArrayObject.optional(),
 });
