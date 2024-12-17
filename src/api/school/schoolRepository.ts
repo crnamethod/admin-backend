@@ -25,7 +25,7 @@ import { prerequisiteRepository } from "../prerequisite/repositories/prerequisit
 import type { AssignClinicDto } from "./dto/assign-clinic.dto";
 import type { AssignPrerequisiteDto } from "./dto/assign-prerequisite.dto";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
-import type { GetSchoolsQueryDto } from "./dto/filter-school.dto";
+import { FetchEnum, type GetSchoolsQueryDto } from "./dto/filter-school.dto";
 import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
 import type { RemovePrerequisiteDto } from "./dto/remove-prerequisite.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
@@ -35,7 +35,7 @@ const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
 class SchoolRepository {
   async findAllSchoolsWithPaginated(body: GetSchoolsQueryDto) {
-    const { search, sort, limit = 10, startingToken, ...filters } = body;
+    const { search, sort, limit = 10, startingToken, fetch = FetchEnum.NO_TRASH, ...filters } = body;
 
     const params: QueryCommandInput = {
       TableName,
@@ -46,7 +46,7 @@ class SchoolRepository {
       ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
     };
 
-    const filterExpressions: string[] = ["#hide = :hide", "attribute_not_exists(deletedAt) OR deletedAt = :null"];
+    const filterExpressions: string[] = ["#hide = :hide"];
 
     const expressionAttributeNames: { [key: string]: string } = {
       "#hide": "hide",
@@ -58,8 +58,15 @@ class SchoolRepository {
     const expressionAttributeValues: { [key: string]: any } = {
       ":hide": false,
       ":gsiValue": "ALL",
-      ":null": null,
     };
+
+    if (fetch === FetchEnum.NO_TRASH) {
+      filterExpressions.push("attribute_not_exists(deletedAt) OR deletedAt = :deletedAt");
+      expressionAttributeValues[":deletedAt"] = null;
+    } else if (fetch === FetchEnum.TRASH_ONLY) {
+      filterExpressions.push("attribute_exists(deletedAt) AND deletedAt <> :deletedAt");
+      expressionAttributeValues[":deletedAt"] = null;
+    }
 
     if (filters) {
       const {

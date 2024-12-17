@@ -22,6 +22,7 @@ import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
 import { updateDataHelper } from "@/common/utils/update";
 
+import { FetchEnum } from "../school/dto/filter-school.dto";
 import type { CreateClinicDto } from "./dto/create-clinic.dto";
 import type { FindAllClinicDto } from "./dto/get-all-clinic.dto";
 import type { UpdateClinicDto } from "./dto/update-clinic.dto";
@@ -69,16 +70,30 @@ class ClinicRepository {
   }
 
   async findAll(query: FindAllClinicDto) {
-    const { limit = 10, startingToken } = query || {};
+    const { fetch = FetchEnum.NO_TRASH, limit = 10, startingToken } = query || {};
+
+    const filterExpressions: string[] = [];
+    const expressionAttributeValues: { [key: string]: any } = {};
+
+    if (fetch === FetchEnum.NO_TRASH) {
+      filterExpressions.push("attribute_not_exists(deletedAt) OR deletedAt = :deletedAt");
+      expressionAttributeValues[":deletedAt"] = null;
+    } else if (fetch === FetchEnum.TRASH_ONLY) {
+      filterExpressions.push("attribute_exists(deletedAt) AND deletedAt <> :deletedAt");
+      expressionAttributeValues[":deletedAt"] = null;
+    }
 
     const params: ScanCommandInput = {
       TableName,
       Limit: limit,
-      FilterExpression: "attribute_not_exists(deletedAt) OR deletedAt = :null",
-      ExpressionAttributeValues: {
-        ":null": null,
-      },
     };
+
+    if (filterExpressions.length > 0) {
+      params.FilterExpression = filterExpressions.join(" AND ");
+    }
+    if (Object.keys(expressionAttributeValues).length > 0) {
+      params.ExpressionAttributeValues = expressionAttributeValues;
+    }
 
     const paginator = paginateScan({ client: dynamoClient, startingToken }, params);
 
