@@ -299,6 +299,8 @@ class SchoolRepository {
   }
 
   async assignClinic(dto: AssignClinicDto) {
+    await this.initializeClinicIdsIfNull(dto.id);
+
     const params = this.assignOrRemoveClinicParams(dto, "ADD");
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
@@ -388,6 +390,24 @@ class SchoolRepository {
     };
 
     return params;
+  }
+
+  private async initializeClinicIdsIfNull(id: string) {
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { id },
+      ConditionExpression: "attribute_exists(clinicIds) AND clinicIds = :null",
+      UpdateExpression: "REMOVE clinicIds",
+      ExpressionAttributeValues: {
+        ":null": null,
+      },
+    };
+
+    try {
+      await dynamoClient.send(new UpdateCommand(params));
+    } catch (error) {
+      // * Do not throw an error
+    }
   }
 
   private assignOrRemovePrerequisiteParams({ id, prerequisiteIds }: AssignPrerequisiteDto, action: "ADD" | "DELETE") {
