@@ -78,6 +78,7 @@ export const SchoolSchema = z.object({
   nursing_cas: z.coerce.boolean().default(false),
   nursing_cas_notes: z.coerce.string().nullable().default(null),
   experience_deadline: z.coerce.string().nullable().default(null),
+  experience_deadline_notes: z.coerce.string().nullable().default(null),
   shadow_experience: z.coerce.boolean().default(false),
   shadow_experience_notes: z.coerce.string().nullable().default(null),
   ccrn: z.coerce.boolean().default(false),

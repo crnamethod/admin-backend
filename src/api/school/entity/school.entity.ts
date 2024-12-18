@@ -104,6 +104,7 @@ export class SchoolEntity implements SchoolDto {
   nursing_cas!: boolean;
   nursing_cas_notes!: string | null;
   experience_deadline!: string | null;
+  experience_deadline_notes!: string | null;
   shadow_experience!: boolean;
   shadow_experience_notes!: string | null;
   ccrn!: boolean;
