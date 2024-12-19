@@ -1,9 +1,8 @@
-// import { PrerequisiteSchoolEntity } from '@/api/prerequisite/entities/prerequisite-school.entity';
+import type { PrerequisiteSchoolEntity } from "@/api/prerequisite/entities/prerequisite-school.entity";
 import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { env } from "@/common/utils/envConfig";
 
-import type { PrerequisiteSchoolEntity } from "@/api/prerequisite/entities/prerequisite-school.entity";
 import type { DegreeTypeEnum, ProgramStructureEnum, SchoolDto } from "../school.model";
 
 export class SchoolEntity implements SchoolDto {
@@ -55,10 +54,10 @@ export class SchoolEntity implements SchoolDto {
   email!: string | null;
   program_director!: string | null;
   website_link!: string | null;
-  new_program!: boolean;
+  new_program!: boolean | null;
 
   excerpt!: string | null;
-  hide!: boolean;
+  hide!: boolean | null;
 
   address!: string | null;
   latitude!: number;
@@ -81,35 +80,35 @@ export class SchoolEntity implements SchoolDto {
 
   minimum_icu_experience!: number;
   minimum_icu_experience_notes!: string | null;
-  nicu!: boolean;
+  nicu!: boolean | null;
   nicu_notes!: string | null;
-  picu!: boolean;
+  picu!: boolean | null;
   picu_notes!: string | null;
-  er!: boolean;
+  er!: boolean | null;
   er_notes!: string | null;
-  adult_icu!: boolean;
+  adult_icu!: boolean | null;
   adult_icu_notes!: string | null;
 
   // ? Admission Requirements
-  bsn!: boolean;
+  bsn!: boolean | null;
   bsn_notes!: string | null;
   minimum_gpa!: number;
   minimum_gpa_notes!: string | null;
   minimum_science_gpa!: number;
   minimum_science_gpa_notes!: string | null;
-  last_60_units!: boolean;
+  last_60_units!: boolean | null;
   last_60_units_notes!: string | null;
-  gre!: boolean;
+  gre!: boolean | null;
   gre_notes!: string | null;
-  nursing_cas!: boolean;
+  nursing_cas!: boolean | null;
   nursing_cas_notes!: string | null;
   experience_deadline!: string | null;
   experience_deadline_notes!: string | null;
-  shadow_experience!: boolean;
+  shadow_experience!: boolean | null;
   shadow_experience_notes!: string | null;
-  ccrn!: boolean;
+  ccrn!: boolean | null;
   ccrn_notes!: string | null;
-  online_components!: boolean;
+  online_components!: boolean | null;
   online_components_notes!: string | null;
 
   degree_type!: DegreeTypeEnum | null;
@@ -118,7 +117,7 @@ export class SchoolEntity implements SchoolDto {
   year_established!: string | null;
   credit_hours!: number;
   duration_months!: number;
-  fully_online_semesters!: boolean;
+  fully_online_semesters!: boolean | null;
   fully_online_notes!: string | null;
   passing_grade_requirement!: string | null;
 
@@ -136,19 +135,19 @@ export class SchoolEntity implements SchoolDto {
   nursing_cas_fee!: number;
   application_fee!: number;
   total_application_fee!: number;
-  see_cost_included!: boolean;
-  nce_cost_included!: boolean;
-  conference_fee_included!: boolean;
-  board_prep_materials_included!: boolean;
-  free_housing_for_distant_clinical_sites!: boolean;
+  see_cost_included!: boolean | null;
+  nce_cost_included!: boolean | null;
+  conference_fee_included!: boolean | null;
+  board_prep_materials_included!: boolean | null;
+  free_housing_for_distant_clinical_sites!: boolean | null;
   cost_of_living!: number;
 
   // ? Facilities
-  simulation_lab!: boolean;
+  simulation_lab!: boolean | null;
   simulation_lab_notes!: string | null;
-  cadaver_lab!: boolean;
+  cadaver_lab!: boolean | null;
   cadaver_lab_notes!: string | null;
-  crna_only_sites!: boolean;
+  crna_only_sites!: boolean | null;
   crna_only_sites_notes!: string | null;
 
   class_size!: string | null;
@@ -161,28 +160,28 @@ export class SchoolEntity implements SchoolDto {
 
   // ? Clinical
   number_of_clinical_sites!: string | null;
-  primary_home_clinical_site!: boolean;
-  out_of_state_clinical_site!: boolean;
-  relocation_for_clinical_sites!: boolean;
-  ability_to_create_own_clinical_rotations!: boolean;
+  primary_home_clinical_site!: boolean | null;
+  out_of_state_clinical_site!: boolean | null;
+  relocation_for_clinical_sites!: boolean | null;
+  ability_to_create_own_clinical_rotations!: boolean | null;
 
   // ? Shifts & Schedules
-  call_overnight_shifts_requirement!: boolean;
-  weekend_shifts_requirement!: boolean;
-  holiday_shift_requirement!: boolean;
-  mission_trip_opportunities!: boolean;
+  call_overnight_shifts_requirement!: boolean | null;
+  weekend_shifts_requirement!: boolean | null;
+  holiday_shift_requirement!: boolean | null;
+  mission_trip_opportunities!: boolean | null;
 
   // ? Practice Models & Autonomy
   practice_models_at_clinical_sites!: string | null;
   opportunities_for_autonomy!: number;
-  use_of_aas!: boolean;
-  md_do_anesthesiology_residents_presence!: boolean;
-  rrnas_from_other_programs!: boolean;
-  impact_of_competing_learners!: boolean;
-  academic_medical_center_clinical_sites!: boolean;
-  rural_or_critical_access_clinical_sites!: boolean;
-  office_anesthesia_sites!: boolean;
-  crna_only_clinical_sites!: boolean;
+  use_of_aas!: boolean | null;
+  md_do_anesthesiology_residents_presence!: boolean | null;
+  rrnas_from_other_programs!: boolean | null;
+  impact_of_competing_learners!: boolean | null;
+  academic_medical_center_clinical_sites!: boolean | null;
+  rural_or_critical_access_clinical_sites!: boolean | null;
+  office_anesthesia_sites!: boolean | null;
+  crna_only_clinical_sites!: boolean | null;
 
   // ? Program Culture
   program_culture_vibe!: string | null;
@@ -190,7 +189,7 @@ export class SchoolEntity implements SchoolDto {
   program_culture_comments!: string | null;
   time_off_allowed_sick_days_policy!: string | null;
   flexibility_for_learning_disabilities!: string | null;
-  support_for_underrepresented_minorities!: boolean;
+  support_for_underrepresented_minorities!: boolean | null;
 
   pros!: string[] | null;
   cons!: string[] | null;
