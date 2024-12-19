@@ -61,10 +61,10 @@ class SchoolRepository {
     };
 
     if (fetch === FetchEnum.NO_TRASH) {
-      filterExpressions.push("attribute_not_exists(deletedAt) OR deletedAt = :deletedAt");
+      filterExpressions.push("(attribute_not_exists(deletedAt) OR deletedAt = :deletedAt)");
       expressionAttributeValues[":deletedAt"] = null;
     } else if (fetch === FetchEnum.TRASH_ONLY) {
-      filterExpressions.push("attribute_exists(deletedAt) AND deletedAt <> :deletedAt");
+      filterExpressions.push("(attribute_exists(deletedAt) AND deletedAt <> :deletedAt)");
       expressionAttributeValues[":deletedAt"] = null;
     }
 
@@ -212,7 +212,7 @@ class SchoolRepository {
       params.ExpressionAttributeValues = expressionAttributeValues;
     }
 
-    // console.log("Query Command Params: ", JSON.stringify(params, null, 2));
+    console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
     // ? Use paginateQuery to handle pagination
     const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);
