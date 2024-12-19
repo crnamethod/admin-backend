@@ -124,6 +124,8 @@ export class SchoolEntity implements SchoolDto {
   program_structure!: ProgramStructureEnum | null;
   program_structure_notes!: string | null;
 
+  application_open!: string | null;
+  application_open_notes!: string | null;
   application_deadline!: string[] | null;
   application_deadline_notes!: string | null;
 

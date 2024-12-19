@@ -99,6 +99,8 @@ export const SchoolSchema = z.object({
   program_structure: z.nativeEnum(ProgramStructureEnum).nullable().default(null),
   program_structure_notes: z.coerce.string().nullable().default(null),
 
+  application_open: z.coerce.string().nullable().default(null),
+  application_open_notes: z.coerce.string().nullable().default(null),
   application_deadline: z.array(z.string()).nullable().default(null),
   application_deadline_notes: z.coerce.string().nullable().default(null),
 
