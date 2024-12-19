@@ -20,7 +20,9 @@ export class SchoolEntity implements SchoolDto {
     }
 
     if (data?.clinicIds) {
-      this.clinicIds = Array.from(data.clinicIds);
+      const clinicIds = Array.from(data.clinicIds);
+      this.clinicIds = clinicIds;
+      this.number_of_clinical_sites = clinicIds.length.toString();
     }
 
     if (data?.prerequisiteIds) {
