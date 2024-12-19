@@ -16,7 +16,7 @@ import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
 import { capitalize } from "@/common/utils/string";
-import { updateDataHelper } from "@/common/utils/update";
+import { chunkObject, updateDataHelper } from "@/common/utils/update";
 import type { RangeFilterDto } from "@/common/validators/common.validator";
 
 import { PrerequisiteSchoolEntity } from "../prerequisite/entities/prerequisite-school.entity";
@@ -259,27 +259,31 @@ class SchoolRepository {
   }
 
   async update(id: string, updateDto: UpdateSchoolDto) {
-    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
+    const chunks = chunkObject(updateDto, 100);
+    let updatedAttributes: any = {};
 
-    const params: UpdateCommandInput = {
-      TableName,
-      Key: { id },
-      UpdateExpression: updateExpression,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ReturnValues: "ALL_NEW",
-    };
+    for (const chunk of chunks) {
+      const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(chunk);
 
-    try {
-      // console.log("Update params:", JSON.stringify(params, null, 2)); // Log params for debugging
+      const params: UpdateCommandInput = {
+        TableName,
+        Key: { id },
+        UpdateExpression: updateExpression,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ReturnValues: "ALL_NEW",
+      };
 
-      const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
-
-      return new SchoolEntity(Attributes!);
-    } catch (error: any) {
-      console.error("Update error:", error);
-      throw new HttpException(`Failed to update school with id ${id}: ${error.message}`, 400);
+      try {
+        const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+        updatedAttributes = { ...updatedAttributes, ...Attributes };
+      } catch (error: any) {
+        console.error("Update error:", error);
+        throw new HttpException(`Failed to update school with id ${id}: ${error.message}`, 400);
+      }
     }
+
+    return new SchoolEntity(updatedAttributes);
   }
 
   async findOne(id: string, options?: GetCommandOptions) {
