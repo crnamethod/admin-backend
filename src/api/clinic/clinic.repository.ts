@@ -76,10 +76,10 @@ class ClinicRepository {
     const expressionAttributeValues: { [key: string]: any } = {};
 
     if (fetch === FetchEnum.NO_TRASH) {
-      filterExpressions.push("attribute_not_exists(deletedAt) OR deletedAt = :deletedAt");
+      filterExpressions.push("(attribute_not_exists(deletedAt) OR deletedAt = :deletedAt)");
       expressionAttributeValues[":deletedAt"] = null;
     } else if (fetch === FetchEnum.TRASH_ONLY) {
-      filterExpressions.push("attribute_exists(deletedAt) AND deletedAt <> :deletedAt");
+      filterExpressions.push("(attribute_exists(deletedAt) AND deletedAt <> :deletedAt)");
       expressionAttributeValues[":deletedAt"] = null;
     }
 
