@@ -14,7 +14,7 @@ import {
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
-import { updateDataHelper } from "@/common/utils/update";
+import { updateDataHelper, updateParentUpdatedAt } from "@/common/utils/update";
 
 import type { CreatePrerequisiteSchoolDto } from "../dto/create-prerequisite-school.dto";
 import type { FindPrerequisiteSchoolDto } from "../dto/get-prerequisite-school.dto";
@@ -62,6 +62,9 @@ class PrerequisiteSchoolRepository {
       ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
     };
+
+    // ? Update School's updatedAt property
+    await updateParentUpdatedAt(env.DYNAMODB_TBL_SCHOOLS, { id: Key.schoolId });
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
 

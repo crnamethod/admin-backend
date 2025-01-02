@@ -1,4 +1,6 @@
+import { UpdateCommand, type UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 import { nowISO } from "./date";
+import { dynamoClient } from "./dynamo";
 
 export const updateDataHelper = (updateDto: any) => {
   const updateExpressionParts: string[] = [];
@@ -37,4 +39,18 @@ export const chunkObject = (obj: Record<string, any>, chunkSize: number) => {
   }
 
   return chunks;
+};
+
+export const updateParentUpdatedAt = async (TableName: string, Key: Record<string, any>) => {
+  // ? Update School's updatedAt property
+  const parentParams: UpdateCommandInput = {
+    TableName,
+    Key,
+    UpdateExpression: "SET updatedAt = :updatedAt",
+    ExpressionAttributeValues: {
+      ":updatedAt": nowISO(),
+    },
+  };
+
+  await dynamoClient.send(new UpdateCommand(parentParams));
 };
