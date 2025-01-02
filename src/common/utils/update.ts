@@ -46,7 +46,7 @@ export const updateParentUpdatedAt = async (TableName: string, Key: Record<strin
   const parentParams: UpdateCommandInput = {
     TableName,
     Key,
-    UpdateExpression: "updatedAt = :updatedAt",
+    UpdateExpression: "SET updatedAt = :updatedAt",
     ExpressionAttributeValues: {
       ":updatedAt": nowISO(),
     },
