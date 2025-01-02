@@ -16,7 +16,7 @@ import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
 import { capitalize } from "@/common/utils/string";
-import { chunkObject, updateDataHelper } from "@/common/utils/update";
+import { chunkObject, updateDataHelper, updateParentUpdatedAt } from "@/common/utils/update";
 import type { RangeFilterDto } from "@/common/validators/common.validator";
 
 import { PrerequisiteSchoolEntity } from "../prerequisite/entities/prerequisite-school.entity";
@@ -316,6 +316,9 @@ class SchoolRepository {
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
 
+    // ? Update School's updatedAt property
+    await updateParentUpdatedAt(env.DYNAMODB_TBL_SCHOOLS, { id: dto.id });
+
     return new SchoolEntity(Attributes!);
   }
 
@@ -324,6 +327,9 @@ class SchoolRepository {
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
 
+    // ? Update School's updatedAt property
+    await updateParentUpdatedAt(env.DYNAMODB_TBL_SCHOOLS, { id: dto.id });
+
     return new SchoolEntity(Attributes!);
   }
 
@@ -331,6 +337,9 @@ class SchoolRepository {
     const params = this.assignOrRemovePrerequisiteParams(dto, "ADD");
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    // ? Update School's updatedAt property
+    await updateParentUpdatedAt(env.DYNAMODB_TBL_SCHOOLS, { id: dto.id });
 
     return new SchoolEntity(Attributes!);
   }
@@ -344,6 +353,9 @@ class SchoolRepository {
     const params = this.assignOrRemovePrerequisiteParams({ id, prerequisiteIds }, "DELETE");
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    // ? Update School's updatedAt property
+    await updateParentUpdatedAt(env.DYNAMODB_TBL_SCHOOLS, { id: dto.id });
 
     return new SchoolEntity(Attributes!);
   }
