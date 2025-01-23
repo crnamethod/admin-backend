@@ -42,8 +42,8 @@ class ClinicService {
 
     const clinicsEntity = await Promise.all(
       clinics.map(async (c) => {
-        const ratings = await clinicReviewService.calculateRatings(c.clinicId);
-        return new ClinicEntity({ ...c, ratings });
+        const { avg_rating, total_reviews } = (await clinicReviewService.calculateRatings(c.clinicId)).responseObject;
+        return new ClinicEntity({ ...c, ratings: { avg_rating, total_reviews } });
       }),
     );
 

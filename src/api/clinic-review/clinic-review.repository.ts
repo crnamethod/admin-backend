@@ -9,60 +9,35 @@ import {
   type UpdateCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
+import { calculateAverage } from "@/common/utils/number";
 import { updateDataHelper } from "@/common/utils/update";
 
 import { clinicService } from "../clinic/clinic.service";
-import type { CreateClinicReviewDto } from "./dto/create-clinic-review.dto";
 import type { UpdateClinicReviewDto } from "./dto/update-clinic-review.dto";
 import { ClinicReviewEntity } from "./entity/clinic-review.entity";
 
 const TableName = env.DYNAMODB_TBL_CLINIC_REVIEWS;
 
 class ClinicReviewRepository {
-  async create(dto: CreateClinicReviewDto) {
-    const { /* polls, */ ...createClinicData } = dto;
-    const newClinicReviewEntity = new ClinicReviewEntity(createClinicData, false);
-
-    const params: PutCommandInput = {
-      TableName,
-      Item: newClinicReviewEntity,
-    };
-
-    // ? Create Polls for the clinic review
-    // await pollService.create(createClinicData.clinicId, newClinicReviewEntity.reviewId, polls);
-
-    // ? Create new clinic review
-    await dynamoClient.send(new PutCommand(params));
-
-    return newClinicReviewEntity;
-  }
-
-  async update(reviewId: string, dto: Omit<UpdateClinicReviewDto, "userId">) {
-    const { /* polls,  */ ...updateDto } = dto;
+  async update(reviewId: string, updateDto: Omit<UpdateClinicReviewDto, "userId">) {
     const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
 
     const params: UpdateCommandInput = {
       TableName,
       Key: { reviewId },
       UpdateExpression: updateExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
       ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: "ALL_NEW",
     };
 
-    console.log("Update params:", JSON.stringify(params, null, 2));
+    // console.log('Update params:', JSON.stringify(params, null, 2));
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
 
-    const updatedReview = new ClinicReviewEntity(Attributes!);
-
-    // TODO: Refactor Update Polls
-    /* if (polls && polls.length > 0) {
-      updatedReview.polls = await pollService.update(updatedReview.clinicId, polls);
-    } */
-
-    return updatedReview;
+    return new ClinicReviewEntity(Attributes!);
   }
 
   async findByClinicIdAndUserId(clinicId: string, userId: string, ProjectionExpression?: string) {
@@ -87,11 +62,11 @@ class ClinicReviewRepository {
     return null;
   }
 
-  async findOne(reviewId: string, ProjectionExpression?: string) {
+  async findOne(reviewId: string, options?: GetCommandOptions) {
     const params: GetCommandInput = {
       TableName,
       Key: { reviewId },
-      ...(ProjectionExpression && { ProjectionExpression }),
+      ...options,
     };
 
     const { Item } = await dynamoClient.send(new GetCommand(params));
@@ -134,6 +109,34 @@ class ClinicReviewRepository {
     if (Items && Items.length > 0) return Items.map((item) => new ClinicReviewEntity(item));
 
     return [];
+  }
+
+  async calculateRating(clinicId: string) {
+    const clinicReviews = await this.findAllByClinic(clinicId, "rating");
+
+    const totalRating = clinicReviews.reduce((sum, review) => sum + review.rating, 0);
+
+    const ratings = {
+      five_star: 0,
+      four_star: 0,
+      three_star: 0,
+      two_star: 0,
+      one_star: 0,
+    };
+
+    clinicReviews.forEach((review) => {
+      if (review.rating === 5) ratings.five_star++;
+      else if (review.rating === 4) ratings.four_star++;
+      else if (review.rating === 3) ratings.three_star++;
+      else if (review.rating === 2) ratings.two_star++;
+      else if (review.rating === 1) ratings.one_star++;
+    });
+
+    return {
+      total_reviews: clinicReviews.length,
+      avg_rating: calculateAverage(totalRating, clinicReviews.length),
+      ratings,
+    };
   }
 }
 
