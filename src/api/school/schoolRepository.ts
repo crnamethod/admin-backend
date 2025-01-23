@@ -1,4 +1,6 @@
 import {
+  BatchGetCommand,
+  type BatchGetCommandInput,
   DeleteCommand,
   type DeleteCommandInput,
   GetCommand,
@@ -10,7 +12,7 @@ import {
   paginateQuery,
 } from "@aws-sdk/lib-dynamodb";
 
-import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
+import type { BatchGetCommandOptions, GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
@@ -307,6 +309,29 @@ class SchoolRepository {
     });
 
     return Item ? new SchoolEntity({ ...Item, prerequisites }) : null;
+  }
+
+  async findAllByIds(schoolIds: string[], options?: BatchGetCommandOptions) {
+    const Keys = schoolIds.map((id) => ({ id }));
+    const { ProjectionExpression, ExpressionAttributeNames } = options || {};
+
+    const params: BatchGetCommandInput = {
+      RequestItems: {
+        [TableName]: {
+          Keys,
+          ...(options?.ProjectionExpression && {
+            ProjectionExpression,
+            ExpressionAttributeNames,
+          }),
+        },
+      },
+    };
+
+    const { Responses } = await dynamoClient.send(new BatchGetCommand(params));
+
+    if (Responses?.[TableName] && Responses?.[TableName].length > 0) return Responses[TableName].map((s) => new SchoolEntity(s));
+
+    return [];
   }
 
   async assignClinic(dto: AssignClinicDto) {

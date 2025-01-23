@@ -32,6 +32,7 @@ clinicRouter.get("/all", validateRequest({ query: FindAllClinicSchema }), clinic
 
 clinicRouter.get("/", validateRequest({ query: FindAllClinicBySchoolSchema }), clinicController.findAllBySchool);
 
+clinicRouter.get("/schools/:id", clinicController.getAssociatedSchools);
 clinicRouter.get("/:id", clinicController.getOne);
 
 clinicRouter.delete("/:id", clinicController.softDelete);

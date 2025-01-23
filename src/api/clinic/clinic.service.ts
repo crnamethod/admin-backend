@@ -4,6 +4,7 @@ import { ServiceResponse } from "@/common/models/serviceResponse";
 import { HttpException } from "@/common/utils/http-exception";
 
 import { clinicReviewService } from "../clinic-review/clinic-review.service";
+import { schoolClinicService } from "../school-clinic/school-clinic.service";
 import { schoolService } from "../school/schoolService";
 import { clinicRepository } from "./clinic.repository";
 import type { CreateClinicDto } from "./dto/create-clinic.dto";
@@ -62,6 +63,15 @@ class ClinicService {
     if (!clinic) throw new HttpException("Clinic not found", 404);
 
     return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
+  }
+
+  async findAssociatedSchools(clinicId: string) {
+    const schoolClincs = (await schoolClinicService.findAllByClinic(clinicId, { ProjectionExpression: "schoolId" })).responseObject;
+
+    const schoolIds = schoolClincs.map((s) => s.schoolId);
+
+    // ? This is already a Service Response
+    return await schoolService.findAllByIds(schoolIds);
   }
 
   async softDelete(clinicId: string) {
