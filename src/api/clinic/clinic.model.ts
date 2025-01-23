@@ -1,6 +1,7 @@
-import { nowISO } from "@/common/utils/date";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
+
+import { nowISO } from "@/common/utils/date";
 
 extendZodWithOpenApi(z);
 
@@ -12,7 +13,7 @@ export const ClinicSchema = z.object({
   address: z.string(),
   latitude: z.number(),
   longitude: z.number(),
-  ratings: z.number().optional(),
+  ratings: z.any().optional(),
   createdAt: z.string().default(nowISO()).optional(),
   updatedAt: z.string().default(nowISO()).optional(),
   deletedAt: z.string().nullable().default(null).optional(),
