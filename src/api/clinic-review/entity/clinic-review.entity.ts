@@ -38,6 +38,8 @@ export class ClinicReviewEntity implements ClinicReviewType {
   clinicId!: string;
   userId!: string;
 
+  gsiPartitionKey!: string;
+
   status!: StatusReviewEnum;
   rating!: number;
   likes!: number;

@@ -29,6 +29,8 @@ export class ReviewEntity implements ReviewDto {
   reviewId!: string;
   userId!: string;
 
+  gsiPartitionKey!: string;
+
   status!: StatusReviewEnum;
   rating!: number;
   likes!: number;

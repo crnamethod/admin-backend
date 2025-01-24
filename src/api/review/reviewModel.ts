@@ -33,6 +33,8 @@ export const ReviewSchema = z.object({
   schoolId: z.string(),
   userId: z.string(),
 
+  gsiPartitionKey: z.string().default("ALL"),
+
   status: z.nativeEnum(StatusReviewEnum).optional().default(StatusReviewEnum.PENDING),
   rating: z.coerce.number().min(1).max(5),
   likes: z.number().int().default(0),

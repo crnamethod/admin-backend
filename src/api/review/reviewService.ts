@@ -7,10 +7,8 @@ import type { FindAllReviewDto } from "./dto/get-all-review.dto";
 import { reviewRepository } from "./reviewRepository";
 
 class ReviewService {
-  async getReviews(query: FindAllReviewDto) {
-    const reviews = await reviewRepository.findAll(query);
-
-    return ServiceResponse.success("Reviews fetched successfully", reviews, StatusCodes.OK);
+  async findAll(query: FindAllReviewDto) {
+    return await reviewRepository.findAll(query);
   }
 
   async findOne(reviewId: string) {
@@ -26,8 +24,8 @@ class ReviewService {
     return ServiceResponse.success("Review fetched successfully", review, StatusCodes.OK);
   }
 
-  async getReviewsBySchool(schoolId: string) {
-    const reviews = await reviewRepository.findReviewsBySchoolIdAsync(schoolId);
+  async findReviewsBySchoolId(schoolId: string) {
+    const reviews = await reviewRepository.findManyBySchool(schoolId);
 
     return ServiceResponse.success("Reviews by School fetched successfully", reviews, StatusCodes.OK);
   }

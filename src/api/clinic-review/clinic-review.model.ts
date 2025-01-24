@@ -20,6 +20,8 @@ export const ClinicReviewSchema = z.object({
   userId: z.string(), // User who submitted the review
   clinicId: z.string().uuid(), // clinic being reviewed
 
+  gsiPartitionKey: z.string().default("ALL"),
+
   status: z.nativeEnum(StatusReviewEnum).optional().default(StatusReviewEnum.PENDING),
   likes: z.coerce.number().int().default(0),
   rating: z.coerce.number().min(1).max(5),

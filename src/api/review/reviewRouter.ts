@@ -3,6 +3,9 @@ import express, { type Router } from "express";
 import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
+import { validateRequest } from "@/common/utils/httpHandlers";
+
+import { FindAllReviewSchema } from "./dto/get-all-review.dto";
 import { reviewController } from "./reviewController";
 import { ReviewSchema } from "./reviewModel";
 
@@ -18,7 +21,7 @@ reviewRegistry.registerPath({
   responses: createApiResponse(z.array(ReviewSchema), "Success"),
 });
 
-reviewRouter.get("/", reviewController.getReviews);
+reviewRouter.get("/", validateRequest({ query: FindAllReviewSchema }), reviewController.getReviews);
 
 reviewRegistry.registerPath({
   method: "get",
