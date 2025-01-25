@@ -35,6 +35,11 @@ class ClinicController {
     res.status(data.statusCode).json(data);
   });
 
+  public getAssociatedSchools = expressAsyncHandler(async (req, res) => {
+    const data = await clinicService.findAssociatedSchools(req.params.id);
+    res.status(data.statusCode).json(data);
+  });
+
   public softDelete = expressAsyncHandler(async (req, res) => {
     const data = await clinicService.softDelete(req.params.id);
     res.status(data.statusCode).json(data);

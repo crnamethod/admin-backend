@@ -28,7 +28,7 @@ export class ClinicEntity implements ClinicType {
   address!: string;
   latitude!: number;
   longitude!: number;
-  ratings!: number;
+  ratings!: any;
   createdAt!: string;
   updatedAt!: string;
   deletedAt!: string | null;

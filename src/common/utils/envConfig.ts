@@ -22,6 +22,7 @@ export const env = cleanEnv(process.env, {
   USER_POOL_ID: str(),
   COGNITO_CLIENT_ID: str(),
   DYNAMODB_TBL_SCHOOLS: str(),
+  DYNAMODB_TBL_SCHOOL_CLINICS: str(),
   DYNAMODB_TBL_REVIEWS: str(),
   DYNAMODB_TBL_USERPROFILE: str(),
   DYNAMODB_TBL_USERFAVORITES: str(),

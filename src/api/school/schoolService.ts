@@ -7,6 +7,7 @@ import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { HttpException } from "@/common/utils/http-exception";
 
 import { prerequisiteSchoolService } from "../prerequisite/services/prerequisite-school.service";
+import { schoolClinicService } from "../school-clinic/school-clinic.service";
 import type { AssignClinicDto } from "./dto/assign-clinic.dto";
 import type { AssignPrerequisiteDto } from "./dto/assign-prerequisite.dto";
 import type { CreateSchoolDto } from "./dto/create-school.dto";
@@ -46,10 +47,23 @@ class SchoolService {
     return school;
   }
 
+  async findAllByIds(schoolIds: string[]) {
+    const schools = await schoolRepository.findAllByIds(schoolIds, {
+      ProjectionExpression: "id, #name, title",
+      ExpressionAttributeNames: {
+        "#name": "name",
+      },
+    });
+
+    return ServiceResponse.success("Schools fetched successfully", schools, StatusCodes.OK);
+  }
+
   async assignClinic(assignDto: AssignClinicDto) {
     assignDto.clinicIds = new Set(assignDto.clinicIds);
 
     const updatedSchool = await schoolRepository.assignClinic(assignDto);
+
+    await schoolClinicService.create({ schoolId: assignDto.id, clinicIds: Array.from(assignDto.clinicIds) });
 
     return ServiceResponse.success("Clinic added successfully", updatedSchool, StatusCodes.CREATED);
   }
@@ -58,6 +72,8 @@ class SchoolService {
     removeDto.clinicIds = new Set(removeDto.clinicIds);
 
     const updatedSchool = await schoolRepository.removeClinic(removeDto);
+
+    await schoolClinicService.delete({ schoolId: removeDto.id, clinicIds: Array.from(removeDto.clinicIds) });
 
     return ServiceResponse.success("Clinic removed successfully", updatedSchool, StatusCodes.OK);
   }

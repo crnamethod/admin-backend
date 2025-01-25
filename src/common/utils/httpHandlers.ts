@@ -39,7 +39,7 @@ export const validateRequest = (schemas: ValidationSchemas) => (req: Request, re
 
     if (err instanceof ZodError) {
       const errors = err.errors.map((issue: any) => ({
-        message: `${issue.path.join(".")} ${issue.message}`,
+        message: issue.path.length > 0 ? `${issue.path.join(".")} ${issue.message}` : issue.message,
       }));
       res.status(StatusCodes.BAD_REQUEST).json({ error: "Invalid data", details: errors });
       const serviceResponse = ServiceResponse.failure(errorMessage, errors, statusCode);

@@ -1,0 +1,58 @@
+export enum YearOfTrainingEnum {
+  RRNA1 = "RRNA1",
+  RRNA2 = "RRNA2",
+  RRNA3 = "RRNA3",
+}
+
+export enum PracticeModelEnum {
+  ACT_DIRECTED = "ACT_DIRECTED",
+  ACT_AUTONOMOUS = "ACT_AUTONOMOUS",
+  CRNA_ONLY = "CRNA_ONLY",
+  SOLO = "SOLO",
+}
+
+export enum PracticeSettingEnum {
+  ACADEMIC = "ACADEMIC",
+  HOSPITAL = "HOSPITAL",
+  CRITICAL_ACCESS = "CRITICAL_ACCESS",
+  ASC = "ASC",
+  OFFICE_BASED = "OFFICE_BASED",
+}
+
+export enum OtherLearnerEnum {
+  CRNA_RESIDENTS_ONLY = "CRNA_RESIDENTS_ONLY",
+}
+
+export enum ExperienceEnum {
+  HIGH_AUTONOMY = "HIGH_AUTONOMY",
+  HIGH_PNB_VOLUME = "HIGH_PNB_VOLUME",
+  HIGH_CENTRAL_LINE_VOLUME = "HIGH_CENTRAL_LINE_VOLUME",
+  HIGH_NEURAXIAL_VOLUME = "HIGH_NEURAXIAL_VOLUME",
+}
+
+export enum SubSpecialtiesEnum {
+  OB = "OB",
+  THORACIC = "THORACIC",
+  PEDIATRIC = "PEDIATRIC",
+  ORTHO = "ORTHO",
+  PLASTIC = "PLASTIC",
+  NEURO = "NEURO",
+  CARDIAC = "CARDIAC",
+  TRAUMA = "TRAUMA",
+}
+
+export enum OtherEnum {
+  AWAY_ROTATION = "AWAY_ROTATION",
+  LONG_COMMUTE = "LONG_COMMUTE",
+  SHORT_COMMUTE = "SHORT_COMMUTE",
+  FREE_HOUSING = "FREE_HOUSING",
+  SUPPORTIVE = "SUPPORTIVE",
+}
+
+export enum ScheduleEnum {
+  DAYS = "DAYS",
+  NIGHTS = "NIGHTS",
+  WEEKENDS = "WEEKENDS",
+  HOLIDAYS = "HOLIDAYS",
+  CALL = "CALL",
+}

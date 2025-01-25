@@ -3,16 +3,10 @@ import expressAsyncHandler from "express-async-handler";
 import type { TypedRequestBody, TypedRequestQuery } from "@/common/types/request.type";
 
 import { clinicReviewService } from "./clinic-review.service";
-import type { CreateClinicReviewDto } from "./dto/create-clinic-review.dto";
 import type { QueryClinicReviewDto, QueryOneClinicReviewDto } from "./dto/query-clinic-review.dto";
 import type { UpdateClinicReviewDto } from "./dto/update-clinic-review.dto";
 
 class ClinicReviewController {
-  public create = expressAsyncHandler(async (req: TypedRequestBody<CreateClinicReviewDto>, res) => {
-    const data = await clinicReviewService.createReview(req.body);
-    res.status(data.statusCode).json(data);
-  });
-
   public update = expressAsyncHandler(async (req: TypedRequestBody<UpdateClinicReviewDto>, res) => {
     const data = await clinicReviewService.updateReview(req.params.id, req.body);
     res.status(data.statusCode).json(data);
