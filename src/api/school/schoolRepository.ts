@@ -312,6 +312,8 @@ class SchoolRepository {
   }
 
   async findAllByIds(schoolIds: string[], options?: BatchGetCommandOptions) {
+    if (schoolIds.length === 0) return [];
+
     const Keys = schoolIds.map((id) => ({ id }));
     const { ProjectionExpression, ExpressionAttributeNames } = options || {};
 
