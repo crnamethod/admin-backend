@@ -27,6 +27,7 @@ export const ClinicReviewSchema = z.object({
   rating: z.coerce.number().min(1).max(5),
 
   feedback: z.string().nullable().optional().default(null),
+  feedback_search: z.string().nullable().optional().default(null),
   year_of_training: z.nativeEnum(YearOfTrainingEnum),
 
   practice_model: z.array(z.nativeEnum(PracticeModelEnum)).optional().default([]),

@@ -46,6 +46,7 @@ export class ClinicReviewEntity implements ClinicReviewType {
 
   year_of_training!: YearOfTrainingEnum;
   feedback!: string | null;
+  feedback_search!: string | null;
 
   practice_model!: PracticeModelEnum[];
   practice_setting!: PracticeSettingEnum[];

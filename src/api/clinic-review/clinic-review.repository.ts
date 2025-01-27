@@ -105,18 +105,16 @@ class ClinicReviewRepository {
 
     if (rating) addFilterExpression("rating", rating);
 
-    // TODO: Add search to params
-    // if (search) {
-    //   const searchWords = search.split(/\s+/);
-    //   if (searchWords.length > 0) {
-    //     searchWords.forEach((word: string, index: number) => {
-    //       const searchExpression = `contains(#search, :search${index})`;
-    //       filterExpressions.push(searchExpression);
-    //       params.ExpressionAttributeNames!["#search"] = "search";
-    //       params.ExpressionAttributeValues![`:search${index}`] = word;
-    //     });
-    //   }
-    // }
+    if (search) {
+      const searchWords = search.split(/\s+/);
+      if (searchWords.length > 0) {
+        searchWords.forEach((word: string, index: number) => {
+          const searchExpression = `contains(feedback_search, :search${index})`;
+          filterExpressions.push(searchExpression);
+          params.ExpressionAttributeValues![`:search${index}`] = word;
+        });
+      }
+    }
 
     if (filterExpressions.length > 0) {
       params.FilterExpression = filterExpressions.join(" AND ");
