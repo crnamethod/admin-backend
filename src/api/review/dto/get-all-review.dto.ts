@@ -2,9 +2,7 @@ import { z } from "zod";
 
 import { StatusReviewEnum } from "@/common/enum/review.enum";
 
-export type FindAllReviewDto = z.infer<typeof FindAllReviewSchema>;
-
-export const FindAllReviewSchema = z
+export const BaseFindAllReviewSchema = z
   .object({
     sort_by_date: z.enum(["asc", "desc"]).optional(),
     limit: z.coerce.number().optional(),
@@ -29,28 +27,31 @@ export const FindAllReviewSchema = z
     rating: z.coerce.number().optional(),
     status: z.nativeEnum(StatusReviewEnum).optional(),
   })
-  .strict()
-  .superRefine((data, ctx) => {
-    if (data.schoolId && data.userId) {
-      ctx.addIssue({
-        code: "custom",
-        message: `Only one of 'schoolId' or 'userId' should be present.`,
-      });
-    }
+  .strict();
 
-    if ((data.startDate && !data.endDate) || (!data.startDate && data.endDate)) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["startDate", "endDate"],
-        message: "are required if either is provided.",
-      });
-    }
+export type FindAllReviewDto = z.infer<typeof FindAllReviewSchema>;
 
-    if (data.startDate && data.endDate && data.startDate > data.endDate) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["startDate"],
-        message: "should not be greater than endDate.",
-      });
-    }
-  });
+export const FindAllReviewSchema = BaseFindAllReviewSchema.superRefine((data, ctx) => {
+  if (data.schoolId && data.userId) {
+    ctx.addIssue({
+      code: "custom",
+      message: `Only one of 'schoolId' or 'userId' should be present.`,
+    });
+  }
+
+  if ((data.startDate && !data.endDate) || (!data.startDate && data.endDate)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["startDate", "endDate"],
+      message: "are required if either is provided.",
+    });
+  }
+
+  if (data.startDate && data.endDate && data.startDate > data.endDate) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["startDate"],
+      message: "should not be greater than endDate.",
+    });
+  }
+});
