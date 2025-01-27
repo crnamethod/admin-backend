@@ -3,22 +3,22 @@ import expressAsyncHandler from "express-async-handler";
 import type { TypedRequestBody, TypedRequestQuery } from "@/common/types/request.type";
 
 import { clinicReviewService } from "./clinic-review.service";
-import type { QueryClinicReviewDto, QueryOneClinicReviewDto } from "./dto/query-clinic-review.dto";
+import type { FindAllClinicReviewDto } from "./dto/get-all-clinic-review.dto";
 import type { UpdateClinicReviewDto } from "./dto/update-clinic-review.dto";
 
 class ClinicReviewController {
+  public findAll = expressAsyncHandler(async (req: TypedRequestQuery<FindAllClinicReviewDto>, res) => {
+    const data = await clinicReviewService.findAll(req.query);
+    res.status(200).json(data);
+  });
+
   public update = expressAsyncHandler(async (req: TypedRequestBody<UpdateClinicReviewDto>, res) => {
     const data = await clinicReviewService.updateReview(req.params.id, req.body);
     res.status(data.statusCode).json(data);
   });
 
-  public findAllByClinic = expressAsyncHandler(async (req: TypedRequestQuery<QueryClinicReviewDto>, res) => {
-    const data = await clinicReviewService.findAllByClinic(req.query);
-    res.status(data.statusCode).json(data);
-  });
-
-  public findOne = expressAsyncHandler(async (req: TypedRequestQuery<QueryOneClinicReviewDto>, res) => {
-    const data = await clinicReviewService.findOneByQuery(req.params.id, req.query.userId);
+  public findOne = expressAsyncHandler(async (req, res) => {
+    const data = await clinicReviewService.findOneOrThrow(req.params.id);
     res.status(data.statusCode).json(data);
   });
 }
