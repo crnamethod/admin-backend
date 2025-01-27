@@ -14,7 +14,6 @@ import { env } from "@/common/utils/envConfig";
 import { calculateAverage } from "@/common/utils/number";
 import { updateDataHelper } from "@/common/utils/update";
 
-import { clinicService } from "../clinic/clinic.service";
 import type { FindAllClinicReviewDto } from "./dto/get-all-clinic-review.dto";
 import type { UpdateClinicReviewDto } from "./dto/update-clinic-review.dto";
 import { ClinicReviewEntity } from "./entity/clinic-review.entity";
@@ -152,28 +151,6 @@ class ClinicReviewRepository {
     return new ClinicReviewEntity(Attributes!);
   }
 
-  async findByClinicIdAndUserId(clinicId: string, userId: string, ProjectionExpression?: string) {
-    const params: QueryCommandInput = {
-      TableName,
-      IndexName: "ClinicUserIndex",
-      KeyConditionExpression: "clinicId = :clinicId AND userId = :userId",
-      ExpressionAttributeValues: {
-        ":clinicId": clinicId,
-        ":userId": userId,
-      },
-      ...(ProjectionExpression && { ProjectionExpression }),
-    };
-
-    // ? Check if clinicId is existing in the Database
-    await clinicService.findOneOrThrow(clinicId);
-
-    const { Items } = await dynamoClient.send(new QueryCommand(params));
-
-    if (Items && Items.length > 0) return new ClinicReviewEntity(Items[0]);
-
-    return null;
-  }
-
   async findOne(reviewId: string, options?: GetCommandOptions) {
     const params: GetCommandInput = {
       TableName,
@@ -189,7 +166,7 @@ class ClinicReviewRepository {
   async findAllByClinic(clinicId: string, ProjectionExpression?: string) {
     const params: QueryCommandInput = {
       TableName,
-      IndexName: "ClinicUserIndex",
+      IndexName: "ClinicCreatedAtIndex",
       KeyConditionExpression: "clinicId = :clinicId",
       ExpressionAttributeValues: {
         ":clinicId": clinicId,
