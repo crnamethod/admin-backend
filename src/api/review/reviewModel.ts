@@ -44,7 +44,9 @@ export const ReviewSchema = z.object({
   didactic_portion: z.coerce.boolean().nullable().optional().default(null),
   clinical_portion: z.coerce.boolean().nullable().optional().default(null),
   best_things: z.string().nullable().optional().default(null),
+  best_things_search: z.string().nullable().optional().default(null),
   downsides: z.string().nullable().optional().default(null),
+  downsides_search: z.string().nullable().optional().default(null),
 
   regional_blocks: ClinicalRotation,
   cardiac: ClinicalRotation,

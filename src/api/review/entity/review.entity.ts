@@ -41,6 +41,8 @@ export class ReviewEntity implements ReviewDto {
   clinical_portion!: boolean | null;
   best_things!: string | null;
   downsides!: string | null;
+  best_things_search!: string | null;
+  downsides_search!: string | null;
 
   regional_blocks!: ClinicalRotationEntity;
   cardiac!: ClinicalRotationEntity;
