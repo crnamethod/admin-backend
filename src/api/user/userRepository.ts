@@ -1,20 +1,12 @@
-import {
-  GetCommand,
-  PutCommand,
-  type PutCommandInput,
-  type PutCommandOutput,
-  ScanCommand,
-  UpdateCommand,
-  type UpdateCommandInput,
-} from "@aws-sdk/lib-dynamodb";
+import { GetCommand, QueryCommand, type QueryCommandInput, ScanCommand, UpdateCommand, type UpdateCommandInput } from "@aws-sdk/lib-dynamodb";
 
 import type { UserProfile } from "@/api/user/userModel";
 import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
-import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { updateDataHelper } from "@/common/utils/update";
-import type { CreateUserProfileDto } from "./dto/create-user.dto";
+
+import type { UpdateProfileDto } from "./dto/update-profile.dto";
 import { UserEntity } from "./entity/user.entity";
 
 const TableName = env.DYNAMODB_TBL_USERPROFILE;
@@ -44,16 +36,8 @@ export class UserRepository {
     return Item ? new UserEntity(Item) : null;
   }
 
-  async updateProfileAsync(userId: string, profileUpdates: Partial<UserProfile>) {
-    if (profileUpdates.username) {
-      const usernameExists = await this.findProfileByUsernameAsync(profileUpdates.username);
-
-      if (usernameExists && usernameExists.userId !== userId) {
-        throw new Error("Username already exists");
-      }
-    }
-
-    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(profileUpdates);
+  async update(userId: string, updateDto: UpdateProfileDto) {
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
 
     const params: UpdateCommandInput = {
       TableName,
@@ -69,10 +53,11 @@ export class UserRepository {
     return new UserEntity(Attributes);
   }
 
-  async findProfileByUsernameAsync(username: string): Promise<UserProfile | null> {
-    const params = {
+  async findOneByUsername(username: string) {
+    const params: QueryCommandInput = {
       TableName,
-      FilterExpression: "#username = :username",
+      IndexName: "UsernameCreatedAtIndex",
+      KeyConditionExpression: "#username = :username",
       ExpressionAttributeNames: {
         "#username": "username",
       },
@@ -81,49 +66,8 @@ export class UserRepository {
       },
     };
 
-    try {
-      const { Items } = await dynamoClient.send(new ScanCommand(params));
+    const { Items } = await dynamoClient.send(new QueryCommand(params));
 
-      if (!Items || Items.length === 0) {
-        return null;
-      }
-
-      return new UserEntity(Items[0]);
-    } catch (error) {
-      console.error("Error fetching user profile by username:", error);
-      throw new Error("Could not fetch user profile by username");
-    }
-  }
-
-  async createProfileAsync(profile: CreateUserProfileDto) {
-    try {
-      const getParams = {
-        TableName,
-        Key: { userId: profile.userId },
-      };
-
-      const { Item } = await dynamoClient.send(new GetCommand(getParams));
-
-      if (Item) {
-        // Profile already exists, return the existing profile
-        return new UserEntity(Item);
-      } else {
-        const newUserEntity = new UserEntity(profile, { existing: false });
-
-        // Profile does not exist, create a new profile
-        const putParams: PutCommandInput = {
-          TableName,
-          Item: newUserEntity,
-        };
-
-        await dynamoClient.send(new PutCommand(putParams));
-
-        // Construct and return the profile object
-        return newUserEntity;
-      }
-    } catch (error) {
-      console.error("Error creating user profile:", error);
-      throw new Error("Could not create user profile");
-    }
+    return Items && Items.length > 0 ? new UserEntity(Items[0]) : null;
   }
 }

@@ -10,7 +10,6 @@ import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { env } from "@/common/utils/envConfig";
 import { HttpException } from "@/common/utils/http-exception";
 
-import type { CreateUserProfileDto } from "./dto/create-user.dto";
 import type { UpdateProfileDto } from "./dto/update-profile.dto";
 import type { UserProfileBodyDto } from "./dto/upload-photo.dto";
 
@@ -52,14 +51,16 @@ export class UserService {
     return ServiceResponse.success<UserProfile>("User found", user);
   }
 
-  async update(userId: string, updateDto: UpdateProfileDto): Promise<ServiceResponse<UserProfile | null>> {
-    const updatedProfile = await this.userRepository.updateProfileAsync(userId, updateDto);
-    return ServiceResponse.success<UserProfile>("Profile updated", updatedProfile, StatusCodes.OK);
-  }
+  async update(userId: string, profileUpdates: UpdateProfileDto) {
+    if (profileUpdates.username) {
+      const usernameExists = await this.userRepository.findOneByUsername(profileUpdates.username);
 
-  async create(profile: CreateUserProfileDto) {
-    await this.userRepository.createProfileAsync(profile);
-    return ServiceResponse.success<null>("Profile created", null, StatusCodes.CREATED);
+      if (usernameExists && usernameExists.userId !== userId) throw new HttpException("Username already exists", 409);
+    }
+
+    const updatedProfile = await this.userRepository.update(userId, profileUpdates);
+
+    return ServiceResponse.success("Profile updated", updatedProfile, StatusCodes.OK);
   }
 
   async changePassword(username: string, newPassword: string): Promise<void> {

@@ -25,13 +25,6 @@ class UserController {
     res.status(serviceResponse.statusCode).send(serviceResponse);
   });
 
-  public createUser = expressAsyncHandler(async (req: Request, res: Response) => {
-    const userProfile = req.body as { email: string; userId: string };
-
-    const serviceResponse = await userService.create(userProfile);
-    res.status(serviceResponse.statusCode).send(serviceResponse);
-  });
-
   public changePassword = expressAsyncHandler(async (req: TypedRequestBody<UpdatePasswordDto>, res: Response) => {
     await userService.changePassword(req.body.email, req.body.password);
     res.status(200).json({ message: "Password changed successfully " });
