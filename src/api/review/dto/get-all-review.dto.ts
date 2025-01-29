@@ -23,7 +23,7 @@ export const BaseFindAllReviewSchema = z
       .transform((d) => d.toISOString())
       .optional(),
     schoolId: z.string().optional(),
-    userId: z.string().optional(),
+    email: z.string().optional(),
     rating: z.coerce.number().optional(),
     status: z.nativeEnum(StatusReviewEnum).optional(),
   })
@@ -32,13 +32,6 @@ export const BaseFindAllReviewSchema = z
 export type FindAllReviewDto = z.infer<typeof FindAllReviewSchema>;
 
 export const FindAllReviewSchema = BaseFindAllReviewSchema.superRefine((data, ctx) => {
-  if (data.schoolId && data.userId) {
-    ctx.addIssue({
-      code: "custom",
-      message: `Only one of 'schoolId' or 'userId' should be present.`,
-    });
-  }
-
   if ((data.startDate && !data.endDate) || (!data.startDate && data.endDate)) {
     ctx.addIssue({
       code: "custom",

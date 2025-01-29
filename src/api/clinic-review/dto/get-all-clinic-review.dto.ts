@@ -9,13 +9,6 @@ export const FindAllClinicReviewSchema = BaseFindAllReviewSchema.omit({ schoolId
     clinicId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.clinicId && data.userId) {
-      ctx.addIssue({
-        code: "custom",
-        message: `Only one of 'schoolId' or 'userId' should be present.`,
-      });
-    }
-
     if ((data.startDate && !data.endDate) || (!data.startDate && data.endDate)) {
       ctx.addIssue({
         code: "custom",

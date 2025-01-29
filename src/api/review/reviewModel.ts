@@ -35,6 +35,8 @@ export const ReviewSchema = z.object({
 
   gsiPartitionKey: z.string().default("ALL"),
 
+  email: z.string().nullable().optional().default(null),
+
   status: z.nativeEnum(StatusReviewEnum).optional().default(StatusReviewEnum.PENDING),
   rating: z.coerce.number().min(1).max(5),
   likes: z.number().int().default(0),
