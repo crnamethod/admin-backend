@@ -15,7 +15,7 @@ import {
   paginateScan,
 } from "@aws-sdk/lib-dynamodb";
 
-import type { BatchGetCommandOptions } from "@/common/types/dynamo-options.type";
+import type { BatchGetCommandOptions, GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { nowISO } from "@/common/utils/date";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
@@ -139,7 +139,7 @@ class ClinicRepository {
     return DevClinics.sort((a, b) => a.name.localeCompare(b.name)).filter((c) => !c.deletedAt);
   }
 
-  async findOne(clinicId: string) {
+  async findOne(clinicId: string, options?: GetCommandOptions) {
     const params: GetCommandInput = {
       TableName,
       Key: { clinicId },
@@ -147,6 +147,7 @@ class ClinicRepository {
       ExpressionAttributeNames: {
         "#name": "name",
       },
+      ...options,
     };
 
     const { Item } = await dynamoClient.send(new GetCommand(params));
@@ -171,11 +172,7 @@ class ClinicRepository {
 
     const { Items } = await dynamoClient.send(new QueryCommand(params));
 
-    if (Items && Items.length > 0) {
-      return new ClinicEntity(Items[0]);
-    }
-
-    return null;
+    return Items && Items.length > 0 ? new ClinicEntity(Items[0]) : null;
   }
 
   async softDelete(clinicId: string) {
