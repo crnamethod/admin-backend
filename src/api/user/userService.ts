@@ -39,8 +39,9 @@ export class UserService {
   }
 
   async findOne(id: string, options?: GetCommandOptions) {
-    const school = await this.userRepository.findOne(id, options);
-    return school ?? null;
+    const user = await this.userRepository.findOne(id, options);
+
+    return ServiceResponse.success("User found", user);
   }
 
   async findOneOrThrow(id: string, options?: GetCommandOptions) {

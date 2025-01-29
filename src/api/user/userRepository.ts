@@ -95,41 +95,31 @@ export class UserRepository {
     }
   }
 
-  async createProfileAsync(profile: CreateUserProfileDto): Promise<PutCommandOutput | UserProfile> {
-    const getParams = {
-      TableName,
-      Key: { userId: profile.userId },
-    };
-
+  async createProfileAsync(profile: CreateUserProfileDto) {
     try {
+      const getParams = {
+        TableName,
+        Key: { userId: profile.userId },
+      };
+
       const { Item } = await dynamoClient.send(new GetCommand(getParams));
 
       if (Item) {
         // Profile already exists, return the existing profile
         return new UserEntity(Item);
       } else {
-        const Item = {
-          userId: profile.userId,
-          email: profile.email,
-          stripeCustomerId: "",
-          isSubscriber: false,
-          username: "",
-          firstName: "",
-          lastName: "",
-          createdAt: nowISO(),
-          updatedAt: nowISO(),
-        };
+        const newUserEntity = new UserEntity(profile, { existing: false });
 
         // Profile does not exist, create a new profile
         const putParams: PutCommandInput = {
           TableName,
-          Item,
+          Item: newUserEntity,
         };
 
-        const { Attributes } = await dynamoClient.send(new PutCommand(putParams));
+        await dynamoClient.send(new PutCommand(putParams));
 
         // Construct and return the profile object
-        return new UserEntity(Attributes);
+        return newUserEntity;
       }
     } catch (error) {
       console.error("Error creating user profile:", error);
