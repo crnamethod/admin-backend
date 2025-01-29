@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 
 import { ServiceResponse } from "@/common/models/serviceResponse";
+import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
 import { HttpException } from "@/common/utils/http-exception";
 
 import { clinicReviewService } from "../clinic-review/clinic-review.service";
@@ -51,14 +52,14 @@ class ClinicService {
     return ServiceResponse.success("Clinics fetched successfully", clinicsEntity, StatusCodes.OK);
   }
 
-  async findOne(clinicId: string) {
-    const clinic = await clinicRepository.findOne(clinicId);
+  async findOne(clinicId: string, options?: GetCommandOptions) {
+    const clinic = await clinicRepository.findOne(clinicId, options);
 
     return ServiceResponse.success("Clinic fetched successfully", clinic, StatusCodes.OK);
   }
 
-  async findOneOrThrow(clinicId: string) {
-    const clinic = await clinicRepository.findOne(clinicId);
+  async findOneOrThrow(clinicId: string, options?: GetCommandOptions) {
+    const clinic = await clinicRepository.findOne(clinicId, options);
 
     if (!clinic) throw new HttpException("Clinic not found", 404);
 
