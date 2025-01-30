@@ -84,7 +84,8 @@ class ClinicReviewRepository {
     }
 
     if (startDate && endDate) {
-      params.KeyConditionExpression += " AND createdAt BETWEEN :startDate AND :endDate";
+      const dateKey = params.IndexName !== "UpdatedAtIndex" ? "createdAt" : "updatedAt";
+      params.KeyConditionExpression += ` AND ${dateKey} BETWEEN :startDate AND :endDate`;
       params.ExpressionAttributeValues![":startDate"] = startDate;
       params.ExpressionAttributeValues![":endDate"] = endDate;
     }
