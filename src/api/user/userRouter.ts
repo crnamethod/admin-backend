@@ -4,10 +4,9 @@ import { z } from "zod";
 
 import { createApiResponse } from "@/api-docs/openAPIResponseBuilders";
 import { GetUserSchema, UserProfileSchema } from "@/api/user/userModel";
+import { UploadImageSchema } from "@/common/dto/upload-image.dto";
 import { validateRequest } from "@/common/utils/httpHandlers";
 
-import { UploadImageSchema } from "@/common/dto/upload-image.dto";
-import { CreateUserProfileSchema } from "./dto/create-user.dto";
 import { UpdatePasswordSchema } from "./dto/update-password.dto";
 import { UpdateProfileSchema } from "./dto/update-profile.dto";
 import { UserProfileBodySchema } from "./dto/upload-photo.dto";
@@ -15,10 +14,6 @@ import { userController } from "./userController";
 
 export const userRegistry = new OpenAPIRegistry();
 export const userRouter: Router = express.Router();
-
-const CreateProfileResponseSchema = z.object({
-  message: z.string(),
-});
 
 userRegistry.register("User", UserProfileSchema);
 
@@ -67,26 +62,6 @@ userRegistry.registerPath({
   responses: createApiResponse(UserProfileSchema, "Profile updated successfully"),
 });
 userRouter.patch("/profile/:userId", validateRequest({ body: UpdateProfileSchema }), userController.updateUser);
-
-// ------------------
-userRegistry.registerPath({
-  method: "post",
-  path: "/user/profile",
-  tags: ["User"],
-  description: "Create a user profile",
-  request: {
-    body: {
-      content: {
-        "application/json": {
-          schema: UserProfileSchema,
-        },
-      },
-    },
-  },
-  responses: createApiResponse(CreateProfileResponseSchema, "Profile created successfully"),
-});
-
-userRouter.post("/profile", validateRequest({ body: CreateUserProfileSchema }), userController.createUser);
 
 // -------------------
 userRegistry.registerPath({

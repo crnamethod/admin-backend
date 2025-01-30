@@ -22,6 +22,8 @@ export const ClinicReviewSchema = z.object({
 
   gsiPartitionKey: z.string().default("ALL"),
 
+  email: z.string().nullable().optional().default(null),
+
   status: z.nativeEnum(StatusReviewEnum).optional().default(StatusReviewEnum.PENDING),
   likes: z.coerce.number().int().default(0),
   rating: z.coerce.number().min(1).max(5),

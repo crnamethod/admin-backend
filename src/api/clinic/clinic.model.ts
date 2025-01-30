@@ -14,7 +14,7 @@ export const ClinicSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   ratings: z.any().optional(),
-  createdAt: z.string().default(nowISO()).optional(),
-  updatedAt: z.string().default(nowISO()).optional(),
-  deletedAt: z.string().nullable().default(null).optional(),
+  createdAt: z.string().optional().default(nowISO()),
+  updatedAt: z.string().optional().default(nowISO()),
+  deletedAt: z.string().nullable().optional().default(null),
 });

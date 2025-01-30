@@ -8,7 +8,7 @@ import {
   paginateQuery,
 } from "@aws-sdk/lib-dynamodb";
 
-import type { GetCommandOptions } from "@/common/types/dynamo-options.type";
+import type { GetCommandOptions, QueryCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 import { calculateAverage } from "@/common/utils/number";
@@ -21,10 +21,10 @@ import { ClinicReviewEntity } from "./entity/clinic-review.entity";
 const TableName = env.DYNAMODB_TBL_CLINIC_REVIEWS;
 
 class ClinicReviewRepository {
-  async findAll(query: FindAllClinicReviewDto) {
+  async findAll(query: FindAllClinicReviewDto, options?: QueryCommandOptions) {
     const { limit = 10, startingToken, ...filters } = query || {};
 
-    const params = this.findAllQuery({ limit, ...filters });
+    const params = this.findAllQuery({ limit, ...filters }, options);
 
     console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
@@ -58,8 +58,8 @@ class ClinicReviewRepository {
     };
   }
 
-  private findAllQuery(filters: Omit<FindAllClinicReviewDto, "startingToken">) {
-    const { search, limit, sort_by_date, startDate, endDate, clinicId, userId, rating, status } = filters;
+  private findAllQuery(filters: Omit<FindAllClinicReviewDto, "startingToken">, options?: QueryCommandOptions) {
+    const { search, limit, sort_by_date, startDate, endDate, clinicId, email, rating, status } = filters;
 
     const params: QueryCommandInput = {
       TableName,
@@ -67,6 +67,7 @@ class ClinicReviewRepository {
       ScanIndexForward: sort_by_date === "asc", // true for ascending, false for descending
       ExpressionAttributeNames: {},
       ExpressionAttributeValues: {},
+      ...options,
     };
 
     const filterExpressions: string[] = [];
@@ -75,12 +76,8 @@ class ClinicReviewRepository {
       params.IndexName = "ClinicCreatedAtIndex";
       params.KeyConditionExpression = "clinicId = :clinicId";
       params.ExpressionAttributeValues![":clinicId"] = clinicId;
-    } else if (userId) {
-      params.IndexName = "UserCreatedAtIndex";
-      params.KeyConditionExpression = "userId = :userId";
-      params.ExpressionAttributeValues![":userId"] = userId;
     } else {
-      params.IndexName = "CreatedAtIndex";
+      params.IndexName = "UpdatedAtIndex";
       params.KeyConditionExpression = "#gsiKey = :gsiValue";
       params.ExpressionAttributeValues![":gsiValue"] = "ALL";
       params.ExpressionAttributeNames!["#gsiKey"] = "gsiPartitionKey";
@@ -104,6 +101,8 @@ class ClinicReviewRepository {
     if (status) addFilterExpression("status", status);
 
     if (rating) addFilterExpression("rating", rating);
+
+    if (email) addFilterExpression("email", email);
 
     if (search) {
       const searchWords = search.split(/\s+/);

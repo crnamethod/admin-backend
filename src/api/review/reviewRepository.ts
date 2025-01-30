@@ -3,6 +3,7 @@ import { GetCommand, QueryCommand, type QueryCommandInput, paginateQuery } from 
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
 
+import type { QueryCommandOptions } from "@/common/types/dynamo-options.type";
 import type { FindAllReviewDto } from "./dto/get-all-review.dto";
 import { ReviewEntity } from "./entity/review.entity";
 import type { ReviewDto } from "./reviewModel";
@@ -10,10 +11,10 @@ import type { ReviewDto } from "./reviewModel";
 const TableName = env.DYNAMODB_TBL_REVIEWS;
 
 class ReviewRepository {
-  async findAll(query: FindAllReviewDto) {
+  async findAll(query: FindAllReviewDto, options?: QueryCommandOptions) {
     const { limit = 10, startingToken, ...filters } = query || {};
 
-    const params = this.findAllQuery({ limit, ...filters });
+    const params = this.findAllQuery({ limit, ...filters }, options);
 
     console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
@@ -47,8 +48,8 @@ class ReviewRepository {
     };
   }
 
-  private findAllQuery(filters: Omit<FindAllReviewDto, "startingToken">) {
-    const { search, limit, sort_by_date, startDate, endDate, schoolId, userId, rating, status } = filters;
+  private findAllQuery(filters: Omit<FindAllReviewDto, "startingToken">, options?: QueryCommandOptions) {
+    const { search, limit, sort_by_date, startDate, endDate, schoolId, email, rating, status } = filters;
 
     const params: QueryCommandInput = {
       TableName,
@@ -56,6 +57,7 @@ class ReviewRepository {
       ScanIndexForward: sort_by_date === "asc", // true for ascending, false for descending
       ExpressionAttributeNames: {},
       ExpressionAttributeValues: {},
+      ...options,
     };
 
     const filterExpressions: string[] = [];
@@ -64,12 +66,8 @@ class ReviewRepository {
       params.IndexName = "SchoolCreatedAtIndex";
       params.KeyConditionExpression = "schoolId = :schoolId";
       params.ExpressionAttributeValues![":schoolId"] = schoolId;
-    } else if (userId) {
-      params.IndexName = "UserCreatedAtIndex";
-      params.KeyConditionExpression = "userId = :userId";
-      params.ExpressionAttributeValues![":userId"] = userId;
     } else {
-      params.IndexName = "CreatedAtIndex";
+      params.IndexName = "UpdatedAtIndex";
       params.KeyConditionExpression = "#gsiKey = :gsiValue";
       params.ExpressionAttributeValues![":gsiValue"] = "ALL";
       params.ExpressionAttributeNames!["#gsiKey"] = "gsiPartitionKey";
@@ -93,6 +91,8 @@ class ReviewRepository {
     if (status) addFilterExpression("status", status);
 
     if (rating) addFilterExpression("rating", rating);
+
+    if (email) addFilterExpression("email", email);
 
     if (search) {
       const searchWords = search.split(/\s+/);
