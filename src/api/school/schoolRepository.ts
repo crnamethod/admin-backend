@@ -337,7 +337,7 @@ class SchoolRepository {
   }
 
   async assignClinic(dto: AssignClinicDto) {
-    await this.initializeClinicIdsIfNull(dto.id);
+    await this.initializeSetIfNull(dto.id, "clinicIds");
 
     const params = this.assignOrRemoveClinicParams(dto, "ADD");
 
@@ -361,6 +361,8 @@ class SchoolRepository {
   }
 
   async assignPrerequisite(dto: AssignPrerequisiteDto) {
+    await this.initializeSetIfNull(dto.id, "prerequisiteIds");
+
     const params = this.assignOrRemovePrerequisiteParams(dto, "ADD");
 
     const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
@@ -442,12 +444,12 @@ class SchoolRepository {
     return params;
   }
 
-  private async initializeClinicIdsIfNull(id: string) {
+  private async initializeSetIfNull(id: string, key: "clinicIds" | "prerequisiteIds") {
     const params: UpdateCommandInput = {
       TableName,
       Key: { id },
-      ConditionExpression: "attribute_exists(clinicIds) AND clinicIds = :null",
-      UpdateExpression: "REMOVE clinicIds",
+      ConditionExpression: `attribute_exists(${key}) AND ${key} = :null`,
+      UpdateExpression: `REMOVE ${key}`,
       ExpressionAttributeValues: {
         ":null": null,
       },
