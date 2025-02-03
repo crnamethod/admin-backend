@@ -9,6 +9,11 @@ export const FindAllClinicSchema = z.object({
     .any()
     .transform((val) => JSON.parse(val))
     .optional(),
+  search: z
+    .string()
+    .transform((val) => val.toLowerCase())
+    .optional(),
+  sort: z.enum(["asc", "desc"]).optional(),
 });
 
 export type FindAllClinicDto = z.infer<typeof FindAllClinicSchema>;

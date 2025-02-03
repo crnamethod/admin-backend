@@ -25,10 +25,15 @@ export class ClinicEntity implements ClinicType {
 
   clinicId!: string;
   name!: string;
+
   address!: string;
   latitude!: number;
   longitude!: number;
   ratings!: any;
+
+  search!: string | null;
+  gsiPartitionKey!: string;
+
   createdAt!: string;
   updatedAt!: string;
   deletedAt!: string | null;

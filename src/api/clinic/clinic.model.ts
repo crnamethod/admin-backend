@@ -10,10 +10,15 @@ export type ClinicType = z.infer<typeof ClinicSchema>;
 export const ClinicSchema = z.object({
   clinicId: z.string().uuid(),
   name: z.string(),
+
   address: z.string(),
   latitude: z.number(),
   longitude: z.number(),
   ratings: z.any().optional(),
+
+  search: z.string().nullable().default(null),
+  gsiPartitionKey: z.string().default("ALL"),
+
   createdAt: z.string().optional().default(nowISO()),
   updatedAt: z.string().optional().default(nowISO()),
   deletedAt: z.string().nullable().optional().default(null),
