@@ -131,7 +131,7 @@ class ClinicReviewRepository {
     return params;
   }
 
-  async update(reviewId: string, updateDto: Omit<UpdateClinicReviewDto, "userId">) {
+  async update(reviewId: string, updateDto: UpdateClinicReviewDto) {
     const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
 
     const params: UpdateCommandInput = {

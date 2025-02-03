@@ -36,15 +36,9 @@ class ClinicReviewService {
   }
 
   async updateReview(reviewId: string, dto: UpdateClinicReviewDto) {
-    const { userId, ...data } = dto;
+    await this.findOneOrThrow(reviewId, { ProjectionExpression: "reviewId, userId" });
 
-    const foundReview = await clinicReviewRepository.findOne(reviewId, { ProjectionExpression: "reviewId, userId, clinicId" });
-
-    if (foundReview?.userId !== userId) {
-      throw new HttpException(`You can't update this review`, 400);
-    }
-
-    const updatedReview = await clinicReviewRepository.update(reviewId, data);
+    const updatedReview = await clinicReviewRepository.update(reviewId, dto);
 
     return ServiceResponse.success("Clinic Review updated successfully", updatedReview, StatusCodes.OK);
   }
