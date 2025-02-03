@@ -9,10 +9,9 @@ import {
   type PutCommandInput,
   QueryCommand,
   type QueryCommandInput,
-  type ScanCommandInput,
   UpdateCommand,
   type UpdateCommandInput,
-  paginateScan,
+  paginateQuery,
 } from "@aws-sdk/lib-dynamodb";
 
 import type { BatchGetCommandOptions, GetCommandOptions } from "@/common/types/dynamo-options.type";
@@ -70,10 +69,17 @@ class ClinicRepository {
   }
 
   async findAll(query: FindAllClinicDto) {
-    const { fetch = FetchEnum.NO_TRASH, limit = 10, startingToken } = query || {};
+    const { fetch = FetchEnum.NO_TRASH, limit = 500, search, sort = "asc", startingToken } = query || {};
 
     const filterExpressions: string[] = [];
-    const expressionAttributeValues: { [key: string]: any } = {};
+
+    const expressionAttributeNames: { [key: string]: string } = {
+      "#gsiKey": "gsiPartitionKey",
+    };
+
+    const expressionAttributeValues: { [key: string]: any } = {
+      ":gsiValue": "ALL",
+    };
 
     if (fetch === FetchEnum.NO_TRASH) {
       filterExpressions.push("(attribute_not_exists(deletedAt) OR deletedAt = :deletedAt)");
@@ -83,28 +89,58 @@ class ClinicRepository {
       expressionAttributeValues[":deletedAt"] = null;
     }
 
-    const params: ScanCommandInput = {
+    const params: QueryCommandInput = {
       TableName,
-      Limit: limit,
+      IndexName: "NameIndex",
+      KeyConditionExpression: "#gsiKey = :gsiValue",
+      ScanIndexForward: sort === "asc", // true for ascending, false for descending
+      Limit: search && !limit ? 1000 : limit,
     };
+
+    // ? Add search to params
+    if (search) {
+      const searchWords = search.split(/\s+/);
+      if (searchWords.length > 0) {
+        searchWords.forEach((word: string, index: number) => {
+          const searchExpression = `contains(#search, :search${index})`;
+          filterExpressions.push(searchExpression);
+          expressionAttributeNames["#search"] = "search";
+          expressionAttributeValues[`:search${index}`] = word;
+        });
+      }
+    }
 
     if (filterExpressions.length > 0) {
       params.FilterExpression = filterExpressions.join(" AND ");
+    }
+    if (Object.keys(expressionAttributeNames).length > 0) {
+      params.ExpressionAttributeNames = expressionAttributeNames;
     }
     if (Object.keys(expressionAttributeValues).length > 0) {
       params.ExpressionAttributeValues = expressionAttributeValues;
     }
 
-    const paginator = paginateScan({ client: dynamoClient, startingToken }, params);
+    console.log("Query Command Params: ", JSON.stringify(params, null, 2));
+
+    const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);
 
     const accumulatedItems: any[] = [];
     let lastEvaluatedKey: any;
 
     for await (const page of paginator) {
-      accumulatedItems.push(...page.Items!);
-      lastEvaluatedKey = page.LastEvaluatedKey;
+      const remainingLimit = limit - accumulatedItems.length;
+      accumulatedItems.push(...page.Items!.slice(0, remainingLimit));
 
-      if (accumulatedItems.length >= limit) break;
+      // ? If the accumulated items length is exactly the same with the limit
+      if (remainingLimit % limit === 0 && accumulatedItems.length >= limit) {
+        lastEvaluatedKey = page.LastEvaluatedKey;
+        break;
+      } else if (accumulatedItems.length >= limit) {
+        break;
+      }
+
+      // ? Reassign the value for the last evaluated key if there's still remaining items to be pushed
+      lastEvaluatedKey = page.LastEvaluatedKey;
     }
 
     const clinics = accumulatedItems.map((item) => new ClinicEntity(item));
