@@ -1,10 +1,12 @@
-import { GetCommand, QueryCommand, type QueryCommandInput, paginateQuery } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, QueryCommand, type QueryCommandInput, UpdateCommand, type UpdateCommandInput, paginateQuery } from "@aws-sdk/lib-dynamodb";
 
+import type { GetCommandOptions, QueryCommandOptions } from "@/common/types/dynamo-options.type";
 import { dynamoClient } from "@/common/utils/dynamo";
 import { env } from "@/common/utils/envConfig";
+import { updateDataHelper } from "@/common/utils/update";
 
-import type { QueryCommandOptions } from "@/common/types/dynamo-options.type";
 import type { FindAllReviewDto } from "./dto/get-all-review.dto";
+import type { UpdateReviewDto } from "./dto/update-review.dto";
 import { ReviewEntity } from "./entity/review.entity";
 import type { ReviewDto } from "./reviewModel";
 
@@ -16,7 +18,7 @@ class ReviewRepository {
 
     const params = this.findAllQuery({ limit, ...filters }, options);
 
-    console.log("Query Command Params: ", JSON.stringify(params, null, 2));
+    // console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
     const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);
 
@@ -46,6 +48,24 @@ class ReviewRepository {
       total: reviews.length,
       data: reviews,
     };
+  }
+
+  async update(reviewId: string, updateDto: UpdateReviewDto) {
+    const { updateExpression, expressionAttributeNames, expressionAttributeValues } = updateDataHelper(updateDto);
+
+    const params: UpdateCommandInput = {
+      TableName,
+      Key: { reviewId },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: "ALL_NEW",
+    };
+
+    // console.log("Update params:", JSON.stringify(params, null, 2));
+    const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
+
+    return new ReviewEntity(Attributes!);
   }
 
   private findAllQuery(filters: Omit<FindAllReviewDto, "startingToken">, options?: QueryCommandOptions) {
@@ -136,10 +156,11 @@ class ReviewRepository {
     return Items!.map((item) => new ReviewEntity(item));
   }
 
-  async findOne(reviewId: string) {
+  async findOne(reviewId: string, options?: GetCommandOptions) {
     const params = {
       TableName,
       Key: { reviewId },
+      ...options,
     };
 
     const { Item } = await dynamoClient.send(new GetCommand(params));
