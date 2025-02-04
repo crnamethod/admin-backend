@@ -48,12 +48,14 @@ class ClinicReviewService {
 
     if (!clinicReview) throw new HttpException("Clinic Review not found", 404);
 
-    const { responseObject: clinic } = await clinicService.findOneOrThrow(clinicReview.clinicId, {
-      ProjectionExpression: "#name",
-      ExpressionAttributeNames: { "#name": "name" },
-    });
+    if (clinicReview.clinicId) {
+      const { responseObject: clinic } = await clinicService.findOneOrThrow(clinicReview.clinicId, {
+        ProjectionExpression: "#name",
+        ExpressionAttributeNames: { "#name": "name" },
+      });
 
-    clinicReview.clinic_name = clinic.name;
+      clinicReview.clinic_name = clinic.name;
+    }
 
     return ServiceResponse.success("Clinic Review fetched successfully", clinicReview, StatusCodes.OK);
   }
