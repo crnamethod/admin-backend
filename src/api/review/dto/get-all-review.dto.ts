@@ -5,6 +5,7 @@ import { StatusReviewEnum } from "@/common/enum/review.enum";
 export const BaseFindAllReviewSchema = z
   .object({
     sort_by_date: z.enum(["asc", "desc"]).optional(),
+    sort_by_rating: z.enum(["asc", "desc"]).optional(),
     limit: z.coerce.number().optional(),
     startingToken: z
       .any()
