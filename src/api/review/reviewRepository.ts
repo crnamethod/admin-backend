@@ -119,7 +119,7 @@ class ReviewRepository {
       const searchWords = search.split(/\s+/);
       if (searchWords.length > 0) {
         searchWords.forEach((word: string, index: number) => {
-          const searchExpression = `contains(best_things_search, :search${index}) OR contains(downsides_search, :search${index})`;
+          const searchExpression = `(contains(best_things_search, :search${index}) OR contains(downsides_search, :search${index}) OR contains(email, :search${index}))`;
           filterExpressions.push(searchExpression);
           params.ExpressionAttributeValues![`:search${index}`] = word;
         });

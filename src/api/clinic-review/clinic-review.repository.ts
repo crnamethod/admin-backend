@@ -109,7 +109,7 @@ class ClinicReviewRepository {
       const searchWords = search.split(/\s+/);
       if (searchWords.length > 0) {
         searchWords.forEach((word: string, index: number) => {
-          const searchExpression = `contains(feedback_search, :search${index})`;
+          const searchExpression = `(contains(feedback_search, :search${index}) OR contains(email, :search${index}))`;
           filterExpressions.push(searchExpression);
           params.ExpressionAttributeValues![`:search${index}`] = word;
         });
