@@ -59,12 +59,11 @@ class ClinicReviewRepository {
   }
 
   private findAllQuery(filters: Omit<FindAllClinicReviewDto, "startingToken">, options?: QueryCommandOptions) {
-    const { search, limit, sort_by_date, startDate, endDate, clinicId, email, rating, status } = filters;
+    const { search, limit, sort_by_date, sort_by_rating, startDate, endDate, clinicId, email, rating, status } = filters;
 
     const params: QueryCommandInput = {
       TableName,
       Limit: limit,
-      ScanIndexForward: sort_by_date === "asc", // true for ascending, false for descending
       ExpressionAttributeNames: {},
       ExpressionAttributeValues: {},
       ...options,
@@ -73,19 +72,27 @@ class ClinicReviewRepository {
     const filterExpressions: string[] = [];
 
     if (clinicId) {
-      params.IndexName = "ClinicCreatedAtIndex";
+      params.IndexName = sort_by_rating ? "ClinicRatingIndex" : "ClinicUpdatedAtIndex";
       params.KeyConditionExpression = "clinicId = :clinicId";
       params.ExpressionAttributeValues![":clinicId"] = clinicId;
     } else {
-      params.IndexName = "UpdatedAtIndex";
+      params.IndexName = sort_by_rating ? "RatingIndex" : "UpdatedAtIndex";
       params.KeyConditionExpression = "#gsiKey = :gsiValue";
       params.ExpressionAttributeValues![":gsiValue"] = "ALL";
       params.ExpressionAttributeNames!["#gsiKey"] = "gsiPartitionKey";
     }
 
+    params.ScanIndexForward = sort_by_date ? sort_by_date === "asc" : sort_by_rating === "asc"; // true for ascending, false for descending
+
     if (startDate && endDate) {
-      const dateKey = params.IndexName !== "UpdatedAtIndex" ? "createdAt" : "updatedAt";
-      params.KeyConditionExpression += ` AND ${dateKey} BETWEEN :startDate AND :endDate`;
+      const updatedAtExpression = "updatedAt BETWEEN :startDate AND :endDate";
+
+      if (params.IndexName === "RatingIndex" || params.IndexName === "ClinicRatingIndex") {
+        filterExpressions.push(updatedAtExpression);
+      } else {
+        params.KeyConditionExpression += ` AND ${updatedAtExpression}`;
+      }
+
       params.ExpressionAttributeValues![":startDate"] = startDate;
       params.ExpressionAttributeValues![":endDate"] = endDate;
     }
@@ -101,7 +108,17 @@ class ClinicReviewRepository {
 
     if (status) addFilterExpression("status", status);
 
-    if (rating) addFilterExpression("rating", rating);
+    if (rating) {
+      const ratingExpression = "rating >= :rating";
+
+      if (params.IndexName === "RatingIndex" || params.IndexName === "ClinicRatingIndex") {
+        params.KeyConditionExpression += ` AND ${ratingExpression}`;
+      } else {
+        filterExpressions.push(ratingExpression);
+      }
+
+      params.ExpressionAttributeValues![":rating"] = rating;
+    }
 
     if (email) addFilterExpression("email", email);
 

@@ -69,12 +69,11 @@ class ReviewRepository {
   }
 
   private findAllQuery(filters: Omit<FindAllReviewDto, "startingToken">, options?: QueryCommandOptions) {
-    const { search, limit, sort_by_date, startDate, endDate, schoolId, email, rating, status } = filters;
+    const { search, limit, sort_by_date, sort_by_rating, startDate, endDate, schoolId, email, rating, status } = filters;
 
     const params: QueryCommandInput = {
       TableName,
       Limit: limit,
-      ScanIndexForward: sort_by_date === "asc", // true for ascending, false for descending
       ExpressionAttributeNames: {},
       ExpressionAttributeValues: {},
       ...options,
@@ -83,19 +82,27 @@ class ReviewRepository {
     const filterExpressions: string[] = [];
 
     if (schoolId) {
-      params.IndexName = "SchoolCreatedAtIndex";
+      params.IndexName = sort_by_rating ? "SchoolRatingIndex" : "SchoolUpdatedAtIndex";
       params.KeyConditionExpression = "schoolId = :schoolId";
       params.ExpressionAttributeValues![":schoolId"] = schoolId;
     } else {
-      params.IndexName = "UpdatedAtIndex";
+      params.IndexName = sort_by_rating ? "RatingIndex" : "UpdatedAtIndex";
       params.KeyConditionExpression = "#gsiKey = :gsiValue";
       params.ExpressionAttributeValues![":gsiValue"] = "ALL";
       params.ExpressionAttributeNames!["#gsiKey"] = "gsiPartitionKey";
     }
 
+    params.ScanIndexForward = sort_by_date ? sort_by_date === "asc" : sort_by_rating === "asc"; // true for ascending, false for descending
+
     if (startDate && endDate) {
-      const dateKey = params.IndexName !== "UpdatedAtIndex" ? "createdAt" : "updatedAt";
-      params.KeyConditionExpression += ` AND ${dateKey} BETWEEN :startDate AND :endDate`;
+      const updatedAtExpression = "updatedAt BETWEEN :startDate AND :endDate";
+
+      if (params.IndexName === "RatingIndex" || params.IndexName === "SchoolRatingIndex") {
+        filterExpressions.push(updatedAtExpression);
+      } else {
+        params.KeyConditionExpression += ` AND ${updatedAtExpression}`;
+      }
+
       params.ExpressionAttributeValues![":startDate"] = startDate;
       params.ExpressionAttributeValues![":endDate"] = endDate;
     }
@@ -111,7 +118,17 @@ class ReviewRepository {
 
     if (status) addFilterExpression("status", status);
 
-    if (rating) addFilterExpression("rating", rating);
+    if (rating) {
+      const ratingExpression = "rating >= :rating";
+
+      if (params.IndexName === "RatingIndex" || params.IndexName === "SchoolRatingIndex") {
+        params.KeyConditionExpression += ` AND ${ratingExpression}`;
+      } else {
+        filterExpressions.push(ratingExpression);
+      }
+
+      params.ExpressionAttributeValues![":rating"] = rating;
+    }
 
     if (email) addFilterExpression("email", email);
 

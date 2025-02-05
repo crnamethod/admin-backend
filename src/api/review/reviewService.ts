@@ -13,7 +13,7 @@ import { reviewRepository } from "./reviewRepository";
 class ReviewService {
   async findAll(query: FindAllReviewDto) {
     const result = await reviewRepository.findAll(query, {
-      ProjectionExpression: "reviewId, schoolId, userId, #email, #status, #rating, is_recommended, best_things, downsides, updatedAt",
+      ProjectionExpression: "reviewId, schoolId, userId, #email, #status, #rating, is_recommended, best_things, downsides, createdAt, updatedAt",
       ExpressionAttributeNames: {
         "#email": "email",
         "#status": "status",
