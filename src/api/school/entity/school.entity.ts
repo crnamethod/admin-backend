@@ -134,6 +134,7 @@ export class SchoolEntity implements SchoolDto {
   application_open!: string | null;
   application_open_notes!: string | null;
   application_deadline!: string[] | null;
+  application_deadline_month!: string[] | null;
   application_deadline_notes!: string | null;
 
   // ? Financial Information

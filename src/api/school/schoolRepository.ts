@@ -45,7 +45,7 @@ class SchoolRepository {
       IndexName: "NameIndex",
       KeyConditionExpression: "#gsiKey = :gsiValue",
       ScanIndexForward: sort === "asc", // true for ascending, false for descending
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address",
     };
 
     const filterExpressions: string[] = ["#hide = :hide"];
@@ -55,6 +55,7 @@ class SchoolRepository {
       "#gsiKey": "gsiPartitionKey",
       "#name": "name",
       "#state": "state",
+      "#region": "region",
     };
 
     const expressionAttributeValues: { [key: string]: any } = {
@@ -130,7 +131,7 @@ class SchoolRepository {
         const deadlineExpressions = application_deadline.map((month: string, index: number) => {
           const monthKey = `:applicationDeadline${index}`;
           expressionAttributeValues[monthKey] = month;
-          return `contains(application_deadline, ${monthKey})`;
+          return `contains(application_deadline_month, ${monthKey})`;
         });
         filterExpressions.push(`(${deadlineExpressions.join(" OR ")})`);
       }

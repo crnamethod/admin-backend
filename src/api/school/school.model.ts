@@ -105,6 +105,7 @@ export const SchoolSchema = z.object({
   application_open: z.coerce.string().nullable().default(null),
   application_open_notes: z.coerce.string().nullable().default(null),
   application_deadline: z.array(z.string()).nullable().default(null),
+  application_deadline_month: z.array(z.string()).nullable().default(null),
   application_deadline_notes: z.coerce.string().nullable().default(null),
 
   // ? Financial Information
