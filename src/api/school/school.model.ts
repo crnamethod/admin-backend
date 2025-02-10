@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { nowISO } from "@/common/utils/date";
 
+import { RegionEnum } from "./enum/school.enum";
+
 extendZodWithOpenApi(z);
 
 export enum DegreeTypeEnum {
@@ -40,6 +42,7 @@ export const SchoolSchema = z.object({
 
   phone: z.coerce.string().nullable().default(null),
 
+  region: z.nativeEnum(RegionEnum).nullable().default(null),
   state: z.string().nullable().default(null),
   city: z.string().nullable().default(null),
 

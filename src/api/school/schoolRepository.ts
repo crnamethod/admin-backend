@@ -214,7 +214,7 @@ class SchoolRepository {
       params.ExpressionAttributeValues = expressionAttributeValues;
     }
 
-    console.log("Query Command Params: ", JSON.stringify(params, null, 2));
+    // console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
     // ? Use paginateQuery to handle pagination
     const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);

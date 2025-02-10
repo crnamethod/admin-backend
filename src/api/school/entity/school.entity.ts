@@ -3,6 +3,7 @@ import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { env } from "@/common/utils/envConfig";
 
+import type { RegionEnum } from "../enum/school.enum";
 import type { DegreeTypeEnum, ProgramStructureEnum, SchoolDto } from "../school.model";
 
 export class SchoolEntity implements SchoolDto {
@@ -70,6 +71,7 @@ export class SchoolEntity implements SchoolDto {
 
   phone!: string | null;
 
+  region!: RegionEnum | null;
   state!: string | null;
   city!: string | null;
 

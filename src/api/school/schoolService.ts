@@ -16,6 +16,7 @@ import type { RemoveClinicDto } from "./dto/remove-clinic.dto";
 import type { RemovePrerequisiteDto } from "./dto/remove-prerequisite.dto";
 import type { UpdateSchoolDto } from "./dto/update-school.dto";
 import type { SchoolImageBodyDto } from "./dto/upload-image.dto";
+import { regionHelper } from "./helpers/school.helper";
 import { schoolRepository } from "./schoolRepository";
 
 class SchoolService {
@@ -28,6 +29,10 @@ class SchoolService {
   }
 
   async update(id: string, updateDto: UpdateSchoolDto) {
+    if (updateDto.state && !updateDto.region) {
+      updateDto.region = await regionHelper(updateDto.state);
+    }
+
     return await schoolRepository.update(id, updateDto);
   }
 
