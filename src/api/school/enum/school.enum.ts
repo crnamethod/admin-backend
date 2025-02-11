@@ -18,3 +18,9 @@ export enum ClimateEnum {
   WARM = "warm",
   COLD = "cold",
 }
+
+export enum CostOfLivingEnum {
+  LOW = "low",
+  MODERATE = "moderate",
+  HIGH = "high",
+}

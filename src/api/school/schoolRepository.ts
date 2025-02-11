@@ -100,6 +100,7 @@ class SchoolRepository {
         state,
         location_type,
         climate,
+        cost_of_living,
       } = filters;
 
       const eitherOrHelperFilter = (data: string[], field_name: string) => {
@@ -129,6 +130,7 @@ class SchoolRepository {
       if (program_structure && program_structure.length > 0) eitherOrHelperFilter(program_structure, "program_structure");
       if (state && state.length > 0) eitherOrHelperFilter(state, "#state");
       if (location_type && location_type.length > 0) eitherOrHelperFilter(location_type, "location_type");
+      if (cost_of_living && cost_of_living.length > 0) eitherOrHelperFilter(cost_of_living, "cost_of_living");
 
       if (prerequisites && prerequisites.length > 0) {
         prerequisites.forEach((value: string) => {

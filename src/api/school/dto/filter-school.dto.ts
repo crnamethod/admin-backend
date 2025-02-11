@@ -77,6 +77,11 @@ export const GetSchoolsQuerySchema = z
       })
       .optional(),
     climate: z.nativeEnum(ClimateEnum).optional(),
+    cost_of_living: transformArrayObject
+      .refine((arr: string[]) => arr.every((item: string) => ["low", "moderate", "high"].includes(item)), {
+        message: "value must be in the following: low, moderate, high",
+      })
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (data.sort_by_name && data.sort_by_rank) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { nowISO } from "@/common/utils/date";
 
-import { ClimateEnum, LocationTypeEnum, RegionEnum } from "./enum/school.enum";
+import { ClimateEnum, CostOfLivingEnum, LocationTypeEnum, RegionEnum } from "./enum/school.enum";
 
 extendZodWithOpenApi(z);
 
@@ -124,7 +124,7 @@ export const SchoolSchema = z.object({
   conference_fee_included: z.string().nullable().default(null),
   board_prep_materials_included: z.string().nullable().default(null),
   free_housing_for_distant_clinical_sites: z.string().nullable().default(null),
-  cost_of_living: z.coerce.number().default(0),
+  cost_of_living: z.nativeEnum(CostOfLivingEnum).nullable().default(null),
 
   // ? Facilities
   simulation_lab: z.string().nullable().default(null),
