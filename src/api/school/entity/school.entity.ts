@@ -3,6 +3,7 @@ import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { env } from "@/common/utils/envConfig";
 
+import type { ClimateEnum, CostOfLivingEnum, LocationTypeEnum, RegionEnum } from "../enum/school.enum";
 import type { DegreeTypeEnum, ProgramStructureEnum, SchoolDto } from "../school.model";
 
 export class SchoolEntity implements SchoolDto {
@@ -70,15 +71,19 @@ export class SchoolEntity implements SchoolDto {
 
   phone!: string | null;
 
+  region!: RegionEnum | null;
   state!: string | null;
   city!: string | null;
+  location_type!: LocationTypeEnum | null;
+  climate!: ClimateEnum | null;
 
   interview!: string | null;
   decision_posted!: string | null;
   program_start_date!: string | null;
 
-  rank!: number;
-  ratings!: number;
+  rank!: number | null;
+  padded_rank!: string;
+  ratings!: any;
 
   thumbnail_url!: string | null;
   image_url!: string | null;
@@ -132,6 +137,7 @@ export class SchoolEntity implements SchoolDto {
   application_open!: string | null;
   application_open_notes!: string | null;
   application_deadline!: string[] | null;
+  application_deadline_month!: string[] | null;
   application_deadline_notes!: string | null;
 
   // ? Financial Information
@@ -147,7 +153,7 @@ export class SchoolEntity implements SchoolDto {
   conference_fee_included!: string | null;
   board_prep_materials_included!: string | null;
   free_housing_for_distant_clinical_sites!: string | null;
-  cost_of_living!: number;
+  cost_of_living!: CostOfLivingEnum | null;
 
   // ? Facilities
   simulation_lab!: string | null;

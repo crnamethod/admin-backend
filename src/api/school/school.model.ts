@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { nowISO } from "@/common/utils/date";
 
+import { ClimateEnum, CostOfLivingEnum, LocationTypeEnum, RegionEnum } from "./enum/school.enum";
+
 extendZodWithOpenApi(z);
 
 export enum DegreeTypeEnum {
@@ -40,14 +42,18 @@ export const SchoolSchema = z.object({
 
   phone: z.coerce.string().nullable().default(null),
 
+  region: z.nativeEnum(RegionEnum).nullable().default(null),
   state: z.string().nullable().default(null),
   city: z.string().nullable().default(null),
+  location_type: z.nativeEnum(LocationTypeEnum).nullable().default(null),
+  climate: z.nativeEnum(ClimateEnum).nullable().default(null),
 
   interview: z.coerce.string().nullable().default(null),
   decision_posted: z.coerce.string().nullable().default(null),
   program_start_date: z.coerce.string().nullable().default(null),
 
-  rank: z.coerce.number().default(0),
+  rank: z.coerce.number().nullable().default(null),
+  padded_rank: z.string().default("999999"),
   ratings: z.coerce.number().default(0),
 
   thumbnail_url: z.coerce.string().nullable().default(null),
@@ -102,6 +108,7 @@ export const SchoolSchema = z.object({
   application_open: z.coerce.string().nullable().default(null),
   application_open_notes: z.coerce.string().nullable().default(null),
   application_deadline: z.array(z.string()).nullable().default(null),
+  application_deadline_month: z.array(z.string()).nullable().default(null),
   application_deadline_notes: z.coerce.string().nullable().default(null),
 
   // ? Financial Information
@@ -117,7 +124,7 @@ export const SchoolSchema = z.object({
   conference_fee_included: z.string().nullable().default(null),
   board_prep_materials_included: z.string().nullable().default(null),
   free_housing_for_distant_clinical_sites: z.string().nullable().default(null),
-  cost_of_living: z.coerce.number().default(0),
+  cost_of_living: z.nativeEnum(CostOfLivingEnum).nullable().default(null),
 
   // ? Facilities
   simulation_lab: z.string().nullable().default(null),

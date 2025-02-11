@@ -37,16 +37,22 @@ const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
 class SchoolRepository {
   async findAllSchoolsWithPaginated(body: GetSchoolsQueryDto) {
-    const { search, sort, limit = 10, startingToken, fetch = FetchEnum.NO_TRASH, ...filters } = body;
+    const { search, sort_by_name, sort_by_rank, limit = 10, startingToken, fetch = FetchEnum.NO_TRASH, ...filters } = body;
 
     const params: QueryCommandInput = {
       TableName,
       Limit: limit,
-      IndexName: "NameIndex",
       KeyConditionExpression: "#gsiKey = :gsiValue",
-      ScanIndexForward: sort === "asc", // true for ascending, false for descending
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #state, prerequisiteIds, latitude, longitude, address",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank",
     };
+
+    if (sort_by_rank) {
+      params.IndexName = "RankIndex";
+      params.ScanIndexForward = sort_by_rank === "asc"; // true for ascending, false for descending
+    } else {
+      params.IndexName = "NameIndex";
+      params.ScanIndexForward = sort_by_name === "asc"; // true for ascending, false for descending
+    }
 
     const filterExpressions: string[] = ["#hide = :hide"];
 
@@ -55,6 +61,8 @@ class SchoolRepository {
       "#gsiKey": "gsiPartitionKey",
       "#name": "name",
       "#state": "state",
+      "#region": "region",
+      "#rank": "rank",
     };
 
     const expressionAttributeValues: { [key: string]: any } = {
@@ -90,6 +98,9 @@ class SchoolRepository {
         class_size_category,
         facilities,
         state,
+        location_type,
+        climate,
+        cost_of_living,
       } = filters;
 
       const eitherOrHelperFilter = (data: string[], field_name: string) => {
@@ -118,6 +129,8 @@ class SchoolRepository {
       if (degree_type && degree_type.length > 0) eitherOrHelperFilter(degree_type, "degree_type");
       if (program_structure && program_structure.length > 0) eitherOrHelperFilter(program_structure, "program_structure");
       if (state && state.length > 0) eitherOrHelperFilter(state, "#state");
+      if (location_type && location_type.length > 0) eitherOrHelperFilter(location_type, "location_type");
+      if (cost_of_living && cost_of_living.length > 0) eitherOrHelperFilter(cost_of_living, "cost_of_living");
 
       if (prerequisites && prerequisites.length > 0) {
         prerequisites.forEach((value: string) => {
@@ -130,7 +143,7 @@ class SchoolRepository {
         const deadlineExpressions = application_deadline.map((month: string, index: number) => {
           const monthKey = `:applicationDeadline${index}`;
           expressionAttributeValues[monthKey] = month;
-          return `contains(application_deadline, ${monthKey})`;
+          return `contains(application_deadline_month, ${monthKey})`;
         });
         filterExpressions.push(`(${deadlineExpressions.join(" OR ")})`);
       }
@@ -188,6 +201,11 @@ class SchoolRepository {
         expressionAttributeValues[":class_size_category"] = capitalize(class_size_category);
       }
 
+      if (climate) {
+        filterExpressions.push("climate = :climate");
+        expressionAttributeValues[":climate"] = climate;
+      }
+
       // * Add more conditions here if there are more filters
     }
 
@@ -214,7 +232,7 @@ class SchoolRepository {
       params.ExpressionAttributeValues = expressionAttributeValues;
     }
 
-    console.log("Query Command Params: ", JSON.stringify(params, null, 2));
+    // console.log("Query Command Params: ", JSON.stringify(params, null, 2));
 
     // ? Use paginateQuery to handle pagination
     const paginator = paginateQuery({ client: dynamoClient, startingToken }, params);
@@ -275,6 +293,8 @@ class SchoolRepository {
         ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       };
+
+      // console.log("Update Command Params: ", JSON.stringify(params, null, 2));
 
       try {
         const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
