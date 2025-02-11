@@ -2,6 +2,7 @@ import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 
 import { rangeObject, tranformBooleanObject, transformArrayObject } from "@/common/validators/common.validator";
+import { ClimateEnum } from "../enum/school.enum";
 
 extendZodWithOpenApi(z);
 
@@ -67,4 +68,10 @@ export const GetSchoolsQuerySchema = z.object({
     })
     .optional(),
   state: transformArrayObject.optional(),
+  location_type: transformArrayObject
+    .refine((arr: string[]) => arr.every((item: string) => ["Metro", "Urban", "Suburban", "Rural"].includes(item)), {
+      message: "value must be in the following: Metro, Urban, Suburban, Rural",
+    })
+    .optional(),
+  climate: z.nativeEnum(ClimateEnum).optional(),
 });

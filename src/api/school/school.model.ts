@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { nowISO } from "@/common/utils/date";
 
-import { RegionEnum } from "./enum/school.enum";
+import { ClimateEnum, LocationTypeEnum, RegionEnum } from "./enum/school.enum";
 
 extendZodWithOpenApi(z);
 
@@ -45,6 +45,8 @@ export const SchoolSchema = z.object({
   region: z.nativeEnum(RegionEnum).nullable().default(null),
   state: z.string().nullable().default(null),
   city: z.string().nullable().default(null),
+  location_type: z.nativeEnum(LocationTypeEnum).nullable().default(null),
+  climate: z.nativeEnum(ClimateEnum).nullable().default(null),
 
   interview: z.coerce.string().nullable().default(null),
   decision_posted: z.coerce.string().nullable().default(null),

@@ -91,6 +91,8 @@ class SchoolRepository {
         class_size_category,
         facilities,
         state,
+        location_type,
+        climate,
       } = filters;
 
       const eitherOrHelperFilter = (data: string[], field_name: string) => {
@@ -119,6 +121,7 @@ class SchoolRepository {
       if (degree_type && degree_type.length > 0) eitherOrHelperFilter(degree_type, "degree_type");
       if (program_structure && program_structure.length > 0) eitherOrHelperFilter(program_structure, "program_structure");
       if (state && state.length > 0) eitherOrHelperFilter(state, "#state");
+      if (location_type && location_type.length > 0) eitherOrHelperFilter(location_type, "location_type");
 
       if (prerequisites && prerequisites.length > 0) {
         prerequisites.forEach((value: string) => {
@@ -187,6 +190,11 @@ class SchoolRepository {
       if (class_size_category) {
         filterExpressions.push("class_size_category = :class_size_category");
         expressionAttributeValues[":class_size_category"] = capitalize(class_size_category);
+      }
+
+      if (climate) {
+        filterExpressions.push("climate = :climate");
+        expressionAttributeValues[":climate"] = climate;
       }
 
       // * Add more conditions here if there are more filters

@@ -6,3 +6,15 @@ export enum RegionEnum {
   SOUTHWEST = "Southwest",
   WEST = "West",
 }
+
+export enum LocationTypeEnum {
+  METRO = "Metro",
+  URBAN = "Urban",
+  SUBURBAN = "Suburban",
+  RURAL = "Rural",
+}
+
+export enum ClimateEnum {
+  WARM = "warm",
+  COLD = "cold",
+}
