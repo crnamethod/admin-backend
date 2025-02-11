@@ -81,8 +81,9 @@ export class SchoolEntity implements SchoolDto {
   decision_posted!: string | null;
   program_start_date!: string | null;
 
-  rank!: number;
-  ratings!: number;
+  rank!: number | null;
+  padded_rank!: string;
+  ratings!: any;
 
   thumbnail_url!: string | null;
   image_url!: string | null;

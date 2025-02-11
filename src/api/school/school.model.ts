@@ -52,7 +52,8 @@ export const SchoolSchema = z.object({
   decision_posted: z.coerce.string().nullable().default(null),
   program_start_date: z.coerce.string().nullable().default(null),
 
-  rank: z.coerce.number().default(0),
+  rank: z.coerce.number().nullable().default(null),
+  padded_rank: z.string().default("999999"),
   ratings: z.coerce.number().default(0),
 
   thumbnail_url: z.coerce.string().nullable().default(null),

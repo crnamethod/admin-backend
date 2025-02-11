@@ -37,16 +37,22 @@ const TableName = env.DYNAMODB_TBL_SCHOOLS;
 
 class SchoolRepository {
   async findAllSchoolsWithPaginated(body: GetSchoolsQueryDto) {
-    const { search, sort, limit = 10, startingToken, fetch = FetchEnum.NO_TRASH, ...filters } = body;
+    const { search, sort_by_name, sort_by_rank, limit = 10, startingToken, fetch = FetchEnum.NO_TRASH, ...filters } = body;
 
     const params: QueryCommandInput = {
       TableName,
       Limit: limit,
-      IndexName: "NameIndex",
       KeyConditionExpression: "#gsiKey = :gsiValue",
-      ScanIndexForward: sort === "asc", // true for ascending, false for descending
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank",
     };
+
+    if (sort_by_rank) {
+      params.IndexName = "RankIndex";
+      params.ScanIndexForward = sort_by_rank === "asc"; // true for ascending, false for descending
+    } else {
+      params.IndexName = "NameIndex";
+      params.ScanIndexForward = sort_by_name === "asc"; // true for ascending, false for descending
+    }
 
     const filterExpressions: string[] = ["#hide = :hide"];
 
@@ -56,6 +62,7 @@ class SchoolRepository {
       "#name": "name",
       "#state": "state",
       "#region": "region",
+      "#rank": "rank",
     };
 
     const expressionAttributeValues: { [key: string]: any } = {
@@ -284,6 +291,8 @@ class SchoolRepository {
         ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       };
+
+      // console.log("Update Command Params: ", JSON.stringify(params, null, 2));
 
       try {
         const { Attributes } = await dynamoClient.send(new UpdateCommand(params));
