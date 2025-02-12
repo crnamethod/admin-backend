@@ -16,9 +16,9 @@ import { ClinicEntity } from "./entity/clinic.entity";
 
 class ClinicService {
   async createClinic(createDto: CreateClinicDto) {
-    const foundClinic = await clinicRepository.findByNameAndAddress(createDto.name, createDto.address);
+    const foundClinic = await clinicRepository.findByAddress(createDto.address);
 
-    if (foundClinic && !foundClinic.deletedAt) throw new HttpException("Clinic with the same name and address already exists", 400);
+    if (foundClinic && !foundClinic?.deletedAt) throw new HttpException("Clinic already exists", 400);
 
     const newClinic = await clinicRepository.create(createDto);
 

@@ -6,8 +6,9 @@ export type UpdateClinicDto = z.infer<typeof UpdateClinicSchema>;
 export const UpdateClinicSchema = BaseCreateClinicSchema.partial()
   .strict()
   .transform((data) => {
-    return {
-      ...data,
-      search: data?.name?.toLowerCase() ?? undefined,
-    };
+    if (data?.name) {
+      data.search = data.name.toLowerCase();
+    }
+
+    return data;
   });
