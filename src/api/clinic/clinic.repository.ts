@@ -191,17 +191,15 @@ class ClinicRepository {
     return Item ? new ClinicEntity(Item) : null;
   }
 
-  async findByNameAndAddress(name: string, address: string) {
+  async findByAddress(address: string) {
     const params: QueryCommandInput = {
       TableName,
-      IndexName: "NameAddressIndex",
-      KeyConditionExpression: "#name = :name AND #address = :address",
+      IndexName: "AddressNameIndex",
+      KeyConditionExpression: "#address = :address",
       ExpressionAttributeNames: {
-        "#name": "name",
         "#address": "address",
       },
       ExpressionAttributeValues: {
-        ":name": name,
         ":address": address,
       },
     };
