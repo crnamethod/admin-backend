@@ -1,7 +1,7 @@
+import type { EntityOptions } from "@/common/types/entity.type";
 import { nowISO } from "@/common/utils/date";
 import { generateUUID } from "@/common/utils/idGenerator";
 
-import type { EntityOptions } from "@/common/types/entity.type";
 import type { ClinicType } from "../clinic.model";
 
 export class ClinicEntity implements ClinicType {
@@ -29,10 +29,12 @@ export class ClinicEntity implements ClinicType {
   address!: string;
   latitude!: number;
   longitude!: number;
+
   ratings!: any;
 
   search!: string | null;
   gsiPartitionKey!: string;
+  hide!: boolean | null;
 
   createdAt!: string;
   updatedAt!: string;
