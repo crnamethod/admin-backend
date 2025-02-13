@@ -162,6 +162,8 @@ export class SchoolEntity implements SchoolDto {
   cadaver_lab_notes!: string | null;
   crna_only_sites!: string | null;
   crna_only_sites_notes!: string | null;
+  high_fidelity_sim!: string | null;
+  high_fidelity_sim_notes!: string | null;
 
   class_size!: string | null;
   class_size_category!: string | null;
