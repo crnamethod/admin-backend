@@ -66,8 +66,8 @@ export const GetSchoolsQuerySchema = z
     minimum_science_gpa: rangeObject.optional(),
     class_size_category: z.enum(["small", "medium", "large"]).optional(),
     facilities: transformArrayObject
-      .refine((arr: string[]) => arr.every((item: string) => ["CADAVER_LAB", "CRNA_ONLY_SITES", "SIMULATION_LAB"].includes(item)), {
-        message: "value must be in the following: CADAVER_LAB, CRNA_ONLY_SITES, SIMULATION_LAB",
+      .refine((arr: string[]) => arr.every((item: string) => ["CADAVER_LAB", "CRNA_ONLY_SITES", "SIMULATION_LAB", "HIGH_FIDELITY_SIM"].includes(item)), {
+        message: "value must be in the following: CADAVER_LAB, CRNA_ONLY_SITES, SIMULATION_LAB, HIGH_FIDELITY_SIM",
       })
       .optional(),
     state: transformArrayObject.optional(),

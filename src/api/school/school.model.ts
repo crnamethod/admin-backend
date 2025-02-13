@@ -133,6 +133,8 @@ export const SchoolSchema = z.object({
   cadaver_lab_notes: z.coerce.string().nullable().default(null),
   crna_only_sites: z.string().nullable().default(null),
   crna_only_sites_notes: z.coerce.string().nullable().default(null),
+  high_fidelity_sim: z.string().nullable().default(null),
+  high_fidelity_sim_notes: z.coerce.string().nullable().default(null),
 
   class_size: z.coerce.string().nullable().default(null),
   class_size_category: z.coerce.string().nullable().default(null),

@@ -43,7 +43,7 @@ class SchoolRepository {
       TableName,
       Limit: limit,
       KeyConditionExpression: "#gsiKey = :gsiValue",
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank, #hide",
     };
 
     if (sort_by_rank) {
@@ -111,10 +111,18 @@ class SchoolRepository {
         }
       };
 
-      const checkBoxFilter = (arrayData: string[], value: boolean) => {
+      const checkBoxFilter = (arrayData: string[], value: string, includeRecommended?: boolean) => {
         arrayData.forEach((data) => {
           const key = `:${data}`;
-          filterExpressions.push(`${data.toLowerCase()} = ${key}`);
+          const dataExpressions = `${data.toLowerCase()} = ${key}`;
+
+          if (includeRecommended) {
+            filterExpressions.push(`(${dataExpressions} OR ${data.toLowerCase()} = :recommended)`);
+            expressionAttributeValues[":recommended"] = "recommended";
+          } else {
+            filterExpressions.push(dataExpressions);
+          }
+
           expressionAttributeValues[key] = value;
         });
       };
@@ -133,11 +141,28 @@ class SchoolRepository {
       if (cost_of_living && cost_of_living.length > 0) eitherOrHelperFilter(cost_of_living, "cost_of_living");
 
       if (prerequisites && prerequisites.length > 0) {
-        prerequisites.forEach((value: string) => {
+        const isOrganicAndBioPresent = prerequisites.includes("organic_chem") && prerequisites.includes("bio_chem");
+        const isOrganicOrBioPresent = prerequisites.includes("organic_chem") || prerequisites.includes("bio_chem");
+
+        prerequisites.forEach((value) => {
           const key_attr_value = `:${value}`;
-          filterExpressions.push(`NOT contains(prerequisiteIds, ${key_attr_value})`);
+
+          if (!isOrganicAndBioPresent && (value === "organic_chem" || value === "bio_chem")) {
+            filterExpressions.push(`(NOT contains(prerequisiteIds, ${key_attr_value}) OR contains(prerequisiteIds, :organicOrBio))`);
+          } else {
+            filterExpressions.push(`NOT contains(prerequisiteIds, ${key_attr_value})`);
+          }
+
           expressionAttributeValues[key_attr_value] = value;
         });
+
+        if (isOrganicAndBioPresent) {
+          filterExpressions.push("NOT contains(prerequisiteIds, :organicOrBio)");
+        }
+
+        if (isOrganicAndBioPresent || isOrganicOrBioPresent) {
+          expressionAttributeValues[":organicOrBio"] = "organic_chemistry_or_bio_chemistry";
+        }
       }
       if (application_deadline && application_deadline.length > 0) {
         const deadlineExpressions = application_deadline.map((month: string, index: number) => {
@@ -149,10 +174,10 @@ class SchoolRepository {
       }
 
       // ? Checkbox filters
-      if (specialty_experience && specialty_experience.length > 0) checkBoxFilter(specialty_experience, true);
-      if (not_required && not_required.length > 0) checkBoxFilter(not_required, false);
-      if (other && other.length > 0) checkBoxFilter(other, true);
-      if (facilities && facilities.length > 0) checkBoxFilter(facilities, true);
+      if (specialty_experience && specialty_experience.length > 0) checkBoxFilter(specialty_experience, "true");
+      if (not_required && not_required.length > 0) checkBoxFilter(not_required, "false", true);
+      if (other && other.length > 0) checkBoxFilter(other, "true");
+      if (facilities && facilities.length > 0) checkBoxFilter(facilities, "true");
 
       // ? Range filters
       if (minimum_icu_experience) {
@@ -213,7 +238,7 @@ class SchoolRepository {
     if (search) {
       const searchWords = search.split(/\s+/);
       if (searchWords.length > 0) {
-        searchWords.forEach((word: string, index: number) => {
+        searchWords.forEach((word, index) => {
           const searchExpression = `contains(#search, :search${index})`;
           filterExpressions.push(searchExpression);
           expressionAttributeNames["#search"] = "search";
