@@ -43,7 +43,7 @@ class SchoolRepository {
       TableName,
       Limit: limit,
       KeyConditionExpression: "#gsiKey = :gsiValue",
-      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank",
+      ProjectionExpression: "id, #name, title, thumbnail_url, excerpt, city, #region, #state, prerequisiteIds, latitude, longitude, address, #rank, #hide",
     };
 
     if (sort_by_rank) {
