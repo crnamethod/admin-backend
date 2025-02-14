@@ -54,7 +54,7 @@ class SchoolRepository {
       params.ScanIndexForward = sort_by_name === "asc"; // true for ascending, false for descending
     }
 
-    const filterExpressions: string[] = ["#hide = :hide"];
+    const filterExpressions: string[] = [];
 
     const expressionAttributeNames: { [key: string]: string } = {
       "#hide": "hide",
@@ -66,7 +66,6 @@ class SchoolRepository {
     };
 
     const expressionAttributeValues: { [key: string]: any } = {
-      ":hide": false,
       ":gsiValue": "ALL",
     };
 
